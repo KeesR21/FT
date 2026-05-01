@@ -1,0 +1,807 @@
+{
+    "manifest_version": "1.0.23",
+    "title": "KickStar - Football Academy Elementor Template Kit",
+    "page_builder": "elementor",
+    "kit_version": "1.0.0",
+    "templates": [
+        {
+            "name": "Global Kit Styles",
+            "screenshot": "screenshots\/global-kit-styles.jpg",
+            "source": "templates\/global.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar",
+            "type": "section",
+            "category": "page",
+            "metadata": {
+                "template_type": "global-styles",
+                "include_in_zip": "1",
+                "elementor_pro_required": null,
+                "additional_template_information": [
+                    "These are the global theme styles configured through the Elementor Theme Styles area."
+                ]
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "About us",
+            "screenshot": "screenshots\/about-us.jpg",
+            "source": "templates\/about-us.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/about-us\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Our Team",
+            "screenshot": "screenshots\/our-team.jpg",
+            "source": "templates\/our-team.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/our-team\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Programs",
+            "screenshot": "screenshots\/programs.jpg",
+            "source": "templates\/programs.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/programs\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Schedule",
+            "screenshot": "screenshots\/schedule.jpg",
+            "source": "templates\/schedule.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/schedule\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Program Details",
+            "screenshot": "screenshots\/program-details.jpg",
+            "source": "templates\/program-details.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/service-details\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Home",
+            "screenshot": "screenshots\/home.jpg",
+            "source": "templates\/home.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/home\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Contact us",
+            "screenshot": "screenshots\/contact-us.jpg",
+            "source": "templates\/contact-us.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/contact-us\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Blog & News",
+            "screenshot": "screenshots\/blog-news.jpg",
+            "source": "templates\/blog-news.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/blog-news\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "archive-blog",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Error 404",
+            "screenshot": "screenshots\/error-404.jpg",
+            "source": "templates\/error-404.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/error-404\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-404",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Single Post",
+            "screenshot": "screenshots\/single-post.jpg",
+            "source": "templates\/single-post.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/single-post\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-post",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "FAQ's",
+            "screenshot": "screenshots\/faq-s.jpg",
+            "source": "templates\/faq-s.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/faqs\/",
+            "type": "page",
+            "category": "page",
+            "metadata": {
+                "template_type": "single-page",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Header V1",
+            "screenshot": "screenshots\/header-v1.jpg",
+            "source": "templates\/header-v1.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/header-v1\/",
+            "type": "section",
+            "category": "section",
+            "metadata": {
+                "template_type": "section-header",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Footer V1",
+            "screenshot": "screenshots\/footer-v1.jpg",
+            "source": "templates\/footer-v1.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/footer-v1\/",
+            "type": "section",
+            "category": "section",
+            "metadata": {
+                "template_type": "section-footer",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Off-Canvas Menu",
+            "screenshot": "screenshots\/off-canvas-menu.jpg",
+            "source": "templates\/off-canvas-menu.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/off-canvas-menu\/",
+            "type": "section",
+            "category": "section",
+            "metadata": {
+                "template_type": "section-other",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Metform - Contact",
+            "screenshot": "screenshots\/metform-contact.jpg",
+            "source": "templates\/metform-contact.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/metform-contact\/",
+            "type": "section",
+            "category": "section",
+            "metadata": {
+                "template_type": "section-contact",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        },
+        {
+            "name": "Metform - Newsletter",
+            "screenshot": "screenshots\/metform-newsletter.jpg",
+            "source": "templates\/metform-newsletter.json",
+            "preview_url": "https:\/\/kits.roxthemes.com\/kickstar\/template-kit\/metform-newsletter\/",
+            "type": "section",
+            "category": "section",
+            "metadata": {
+                "template_type": "section-other",
+                "include_in_zip": "1",
+                "elementor_pro_required": null
+            },
+            "elementor_pro_required": false
+        }
+    ],
+    "required_plugins": [
+        {
+            "name": "Elementor",
+            "version": "3.32.4",
+            "file": "elementor\/elementor.php",
+            "author": "Elementor.com"
+        },
+        {
+            "name": "ElementsKit Lite",
+            "version": "3.7.3",
+            "file": "elementskit-lite\/elementskit-lite.php",
+            "author": "Wpmet"
+        },
+        {
+            "name": "Jeg Kit for Elementor",
+            "version": "2.7.0",
+            "file": "jeg-elementor-kit\/jeg-elementor-kit.php",
+            "author": "Jegtheme"
+        },
+        {
+            "name": "MetForm",
+            "version": "4.0.6",
+            "file": "metform\/metform.php",
+            "author": "Wpmet"
+        },
+        {
+            "name": "Skyboot Custom Icons for Elementor - Elementor Icons library",
+            "version": "1.1.0",
+            "file": "skyboot-custom-icons-for-elementor\/skyboot-custom-icons-for-elementor.php",
+            "author": "Skybootstrap"
+        }
+    ],
+    "images": [
+        {
+            "filename": "hero.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/hero.webp",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/programs.json",
+                    "name": "Programs"
+                },
+                {
+                    "source": "templates\/schedule.json",
+                    "name": "Schedule"
+                },
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/contact-us.json",
+                    "name": "Contact us"
+                },
+                {
+                    "source": "templates\/blog-news.json",
+                    "name": "Blog & News"
+                },
+                {
+                    "source": "templates\/error-404.json",
+                    "name": "Error 404"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                },
+                {
+                    "source": "templates\/faq-s.json",
+                    "name": "FAQ's"
+                }
+            ],
+            "filesize": 120176,
+            "dimensions": [
+                1920,
+                1439
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/green-field-with-blue-yellow-stands-against-the-bl-U54DF29"
+        },
+        {
+            "filename": "About-us.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/About-us.jpg",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 89863,
+            "dimensions": [
+                1024,
+                683
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/elderly-male-coach-discussing-game-tactics-with-hi-K8VF7LW"
+        },
+        {
+            "filename": "team-1.2-scaled.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/team-1.2-scaled.webp",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 246470,
+            "dimensions": [
+                2560,
+                1921
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/portrait-of-confidence-serious-football-coach-look-HFTFDRV"
+        },
+        {
+            "filename": "testi-1.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/testi-1.webp",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 9972,
+            "dimensions": [
+                400,
+                400
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/soccer-player-U5AXMLW"
+        },
+        {
+            "filename": "team1.3.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/team1.3.webp",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 40932,
+            "dimensions": [
+                703,
+                703
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/mixed-race-soccer-referee-GUE9W38"
+        },
+        {
+            "filename": "testi-5.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/testi-5.webp",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/programs.json",
+                    "name": "Programs"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 61584,
+            "dimensions": [
+                1280,
+                853
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/fit-brazilian-man-changing-clothings-outdoors-sunn-Z9YYBPJ"
+        },
+        {
+            "filename": "testi-6.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/testi-6.jpg",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/programs.json",
+                    "name": "Programs"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 67488,
+            "dimensions": [
+                900,
+                600
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/happy-young-hispanic-man-smiling-with-arms-crossed-M6CK2XF"
+        },
+        {
+            "filename": "testi-2.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/testi-2.jpg",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/programs.json",
+                    "name": "Programs"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 66019,
+            "dimensions": [
+                1030,
+                687
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/happy-sportsman-portrait-E5J4WLY"
+        },
+        {
+            "filename": "testi-1.0.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/testi-1.0.jpg",
+            "templates": [
+                {
+                    "source": "templates\/about-us.json",
+                    "name": "About us"
+                },
+                {
+                    "source": "templates\/our-team.json",
+                    "name": "Our Team"
+                },
+                {
+                    "source": "templates\/programs.json",
+                    "name": "Programs"
+                },
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 186921,
+            "dimensions": [
+                1535,
+                1024
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/football-player-winner-team-and-people-winning-in--KW7VLVJ"
+        },
+        {
+            "filename": "Why.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/Why.jpg",
+            "templates": [
+                {
+                    "source": "templates\/programs.json",
+                    "name": "Programs"
+                },
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 134146,
+            "dimensions": [
+                1024,
+                683
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/junior-football-player-at-practice-UCGK7CX"
+        },
+        {
+            "filename": "logo.png",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/09\/logo.png",
+            "templates": [
+                {
+                    "source": "templates\/schedule.json",
+                    "name": "Schedule"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/header-v1.json",
+                    "name": "Header V1"
+                },
+                {
+                    "source": "templates\/footer-v1.json",
+                    "name": "Footer V1"
+                },
+                {
+                    "source": "templates\/off-canvas-menu.json",
+                    "name": "Off-Canvas Menu"
+                }
+            ],
+            "filesize": 183256,
+            "dimensions": [
+                536,
+                466
+            ],
+            "image_source": "self_created",
+            "image_urls": "#"
+        },
+        {
+            "filename": "contact-us.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/contact-us.jpg",
+            "templates": [
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 127763,
+            "dimensions": [
+                1320,
+                742
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/football-players-playing-soccer-in-the-ground-L4YZC7P"
+        },
+        {
+            "filename": "service-.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/service-.jpg",
+            "templates": [
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 41984,
+            "dimensions": [
+                1149,
+                601
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/football-player-hits-ball-during-football-match-KUZAEJ9"
+        },
+        {
+            "filename": "Blog-2.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/Blog-2.webp",
+            "templates": [
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 20334,
+            "dimensions": [
+                547,
+                320
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/striker-heads-a-football-against-a-defenders-oppos-2B5SF7A"
+        },
+        {
+            "filename": "blog-3.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/blog-3.webp",
+            "templates": [
+                {
+                    "source": "templates\/program-details.json",
+                    "name": "Program Details"
+                },
+                {
+                    "source": "templates\/single-post.json",
+                    "name": "Single Post"
+                }
+            ],
+            "filesize": 20804,
+            "dimensions": [
+                600,
+                350
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/womens-football-team-kicking-ball-whilst-training--GXEQY8E"
+        },
+        {
+            "filename": "team1.3.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/team1.3.jpg",
+            "templates": [
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 120376,
+            "dimensions": [
+                700,
+                850
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/mixed-race-soccer-referee-GUE9W38"
+        },
+        {
+            "filename": "testi-3.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/testi-3.jpg",
+            "templates": [
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 42221,
+            "dimensions": [
+                541,
+                360
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/sports-man-soccer-player-and-soccer-field-training-SFYG696"
+        },
+        {
+            "filename": "hero-img-min1.png",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/hero-img-min1-800x1284.png",
+            "templates": [
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 234820,
+            "dimensions": [
+                900,
+                1445
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/teenager-soccer-player-dressed-in-a-blue-uniform-h-3UBGDVH"
+        },
+        {
+            "filename": "contact-us1.webp",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/10\/contact-us1.webp",
+            "templates": [
+                {
+                    "source": "templates\/home.json",
+                    "name": "Home"
+                }
+            ],
+            "filesize": 176414,
+            "dimensions": [
+                2124,
+                1416
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/coach-giving-instructions-to-children-football-tea-E632324"
+        },
+        {
+            "filename": "hero-1.2.jpg",
+            "thumbnail_url": "https:\/\/kits.roxthemes.com\/kickstar\/wp-content\/uploads\/2025\/09\/hero-1.2.jpg",
+            "templates": [
+                {
+                    "source": "templates\/header-v1.json",
+                    "name": "Header V1"
+                }
+            ],
+            "filesize": 126105,
+            "dimensions": [
+                1160,
+                700
+            ],
+            "image_source": "envato_elements",
+            "image_urls": "https:\/\/elements.envato.com\/stadium-football-league-soccer-ball-soccer-TXQSDZL"
+        }
+    ]
+}

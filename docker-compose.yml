@@ -1,0 +1,24 @@
+# Local PostgreSQL for development. Start: docker compose up -d
+# Connection string for .env.local:
+#   DATABASE_URL=postgresql://academy:academy@127.0.0.1:5432/academy
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ftpr-academy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: academy
+      POSTGRES_PASSWORD: academy
+      POSTGRES_DB: academy
+    ports:
+      - "5432:5432"
+    volumes:
+      - ftpr_academy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U academy -d academy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  ftpr_academy_pgdata:

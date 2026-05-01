@@ -1,0 +1,30 @@
+/** Demo-only long article body for nw-1 — previews typography & reading time on single news view. */
+export const LONG_TRIALS_ARTICLE_HTML = `<p><strong>KIGALI</strong> — FTPR Lions will hold dedicated open-trial sessions next month for players interested in the <strong>U11</strong> and <strong>U14</strong> pathways. The window is designed for families who want a clear view of how we train, how squads are structured, and what progression looks like across the season — not as a sales pitch, but as an honest introduction to the rhythm of academy life.</p>
+<p>Across Rwandan youth football, parents often ask the same fair questions: How much training is enough without burning young players out? How do you balance school, rest, and competition? How does a club communicate when things go wrong on the pitch — a heavy defeat, a dip in confidence, or a spell on the sideline? Our trials are built to give you partial answers through experience: you will see how sessions are planned, how coaches speak to players, and how standards are maintained when the scoreline is not flattering.</p>
+<p>Trials are not only about match minutes. We look at attitude, coachability, and how young players respond when the session shifts from technical work into small-sided play. We watch for players who scan before they receive, who recover shape after losing the ball, and who encourage teammates when mistakes happen. Talent matters, but in youth development, repeatable habits matter more over a ten-month cycle.</p>
+<h2>What happens on the day</h2>
+<p>Arrival and registration are staggered so pitches are not overcrowded. Players receive a numbered bib, a short safety briefing, and a clear explanation of the session plan. Warm-ups are purposeful — they mirror movements used later in the block — and coaches introduce themselves by name and role so families know who is leading each station.</p>
+<p>The middle block blends possession exercises with directional games. We vary constraints: touch limits, scoring zones, and recovery sprints so players cannot succeed on athleticism alone. Coaches intervene briefly, preferring questions over lectures: <em>What was the trigger to press? Where should the spare player move?</em> That dialogue is central to how we work during the regular season as well.</p>
+<p>The final segment is match-like, with two short halves and a quick half-time. Substitutions rotate so everyone gets meaningful minutes. After the whistle, players line up to thank coaches and opponents — a small ritual that reinforces respect for the game and for each other.</p>
+<h2>Who should attend</h2>
+<ul>
+<li>Boys and girls in the eligible age bands who are committed to weekly training and match exposure.</li>
+<li>Families who value transparent feedback and a structured pathway from foundation skills toward competitive football.</li>
+<li>Players returning from injury who need a careful reintroduction — please tell us in advance so medical notes can be shared discreetly with staff.</li>
+</ul>
+<h2>What we are not trying to do</h2>
+<p>We are not trying to label a child as “elite” or “not good enough” in a single afternoon. Development is non-linear: a quiet player in March can be a decisive influence by November if the environment is right. Trials help us understand fit — for the player, the family, and the squad culture — more than they help us rank talent on a spreadsheet.</p>
+<p>If your child is nervous, that is normal. Our staff have worked with shy first-timers and with confident players who still need to refine discipline off the ball. The point is progress, not performance theatre.</p>
+<h2>How to register</h2>
+<p>Please register interest through the <a href="/contact">contact form</a> on this site. Use the subject line <em>Open trials</em> and include your child’s name, date of birth, and preferred age group. Our office will reply with the exact pitch location, timetable, and what to bring on the day — boots, shin guards, water bottle, and any medication paperwork if relevant.</p>
+<p>If email is unreliable for you, leave a phone number in the message and we will return your call during office hours. We do not publish personal mobile lines for individual coaches; central coordination keeps communication consistent and auditable.</p>
+<blockquote><p>“We want every trial to feel fair, organised, and positive — whether a player joins us or continues their journey elsewhere.”</p></blockquote>
+<h2>After the trial</h2>
+<p>Within a few days, families receive a short written summary: either an invitation to join a squad, a suggestion to repeat a foundation programme, or — honestly — guidance that another club may be a better match for the player’s current needs. None of those outcomes should be read as a final verdict on a young person’s potential.</p>
+<p>For those who enrol, onboarding covers kit expectations, fee schedules, safeguarding contacts, and how to access the season calendar. We also host a parent evening once per term where you can ask operational questions in a group setting — many answers overlap, and it saves everyone time.</p>
+<h2>Frequently asked questions</h2>
+<p><strong>Do you offer transport?</strong> Not as standard; car-pooling suggestions are shared privately between families who opt in.</p>
+<p><strong>What if it rains?</strong> Sessions continue in light rain where safe; extreme weather triggers our contingency plan and we notify registered families by SMS and email.</p>
+<p><strong>Can siblings watch?</strong> Yes, within the spectator area. Please supervise young children so the touchline stays clear for coaches and medics.</p>
+<p>Places are limited to keep coach-to-player ratios where they need to be for a proper assessment. If demand is high, we will open a short waiting list and communicate dates transparently — we would rather add a second trial day than squeeze too many players onto one grid.</p>
+<p>Thank you for considering FTPR Lions. Whether you join us or not, we hope the trial leaves your child with a sharper love for the game and a clearer idea of what structured development can look like in Kigali and beyond.</p>`;

@@ -1,0 +1,20 @@
+export * from "@/components/kickstar/types";
+export { KickstarIconList } from "@/components/kickstar/IconList";
+export { KickstarElementsKitHeading } from "@/components/kickstar/ElementsKitHeading";
+export { KickstarNativeHeading } from "@/components/kickstar/NativeHeading";
+export { KickstarRichText } from "@/components/kickstar/RichText";
+export { KickstarCounter } from "@/components/kickstar/Counter";
+export { KickstarCounterRow } from "@/components/kickstar/CounterRow";
+export { KickstarJKitButton } from "@/components/kickstar/JKitButton";
+export { KickstarVideoButton } from "@/components/kickstar/VideoButton";
+export { KickstarIconBox } from "@/components/kickstar/IconBox";
+export { KickstarImageBox, type KickstarImageBoxProps } from "@/components/kickstar/ImageBox";
+export { KickstarSpacer } from "@/components/kickstar/Spacer";
+export { KickstarProgressBar } from "@/components/kickstar/ProgressBar";
+export { KickstarTestimonial } from "@/components/kickstar/Testimonial";
+export { KickstarAccordion } from "@/components/kickstar/Accordion";
+export { KickstarSocialIcons } from "@/components/kickstar/SocialIcons";
+export { KickstarDivider } from "@/components/kickstar/Divider";
+export { KickstarBlogPostsGrid } from "@/components/kickstar/BlogPostsGrid";
+export { KickstarGlassCard } from "@/components/kickstar/GlassCard";
+/* Import KickstarHomePage only from "@/components/kickstar/KickstarHomePage" — not from this barrel (avoids circular imports). */
