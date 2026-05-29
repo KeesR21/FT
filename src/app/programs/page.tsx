@@ -1,9 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ProgramsDevelopmentPath } from "@/components/programs-development-path";
+import { PublicRegistrationLink } from "@/components/public/public-registration-link";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Programs",
+  description:
+    "Explore FTPR Lions Academy training programs — from youth development pathways to competitive teams, structured for every level."
+};
 
 export default async function ProgramsPage() {
   const c = await getCachedSiteContent();
@@ -32,9 +40,9 @@ export default async function ProgramsPage() {
             <h1 className="programs-landing-hero__title programs-hero-in programs-hero-in--2">{c.programsPageTitle}</h1>
             <p className="programs-landing-hero__lead programs-hero-in programs-hero-in--3">{c.programsPageLead}</p>
             <div className="programs-landing-hero__actions programs-hero-in programs-hero-in--4">
-              <Link href="/register" className="btn programs-landing-hero__btn-primary">
+              <PublicRegistrationLink className="btn programs-landing-hero__btn-primary">
                 Register for trials
-              </Link>
+              </PublicRegistrationLink>
               <Link href="/schedule" className="btn btn-secondary programs-landing-hero__btn-ghost">
                 View schedule
               </Link>
@@ -137,9 +145,7 @@ export default async function ProgramsPage() {
                   <Link href="/contact" className="btn btn-secondary">
                     Ask a question
                   </Link>
-                  <Link href="/register" className="btn">
-                    Start registration
-                  </Link>
+                  <PublicRegistrationLink className="btn">Start registration</PublicRegistrationLink>
                 </div>
               </article>
               <div className="programs-showcase__visual programs-pop" style={{ animationDelay: "0.15s" }}>
@@ -162,9 +168,7 @@ export default async function ProgramsPage() {
               <h2 className="programs-landing-cta__title">{c.programsCtaTitle}</h2>
               <p className="programs-landing-cta__lead muted">{c.programsCtaLead}</p>
               <div className="programs-landing-cta__actions">
-                <Link href="/register" className="btn">
-                  Register now
-                </Link>
+                <PublicRegistrationLink className="btn">Register now</PublicRegistrationLink>
                 <Link href="/contact" className="btn btn-secondary">
                   Contact
                 </Link>

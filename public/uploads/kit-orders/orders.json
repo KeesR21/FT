@@ -1,0 +1,99 @@
+[
+  {
+    "accountId": "fc499a70-706e-49d0-b0a9-cd21e0d35f12",
+    "parentName": "Kees Ir",
+    "parentEmail": "keesr21@gmail.com",
+    "parentPhone": "+250788352160",
+    "playerId": "ee22daeb-a39d-4d5f-8340-6e97344e02f8",
+    "playerName": "Kees Jr",
+    "playerGroup": "U16",
+    "lines": [
+      {
+        "kitId": "cbd49f8e-9b06-4732-a2a0-988361e98c25",
+        "kitType": "Home jersey",
+        "color": "Red and Black",
+        "size": "M",
+        "quantity": 3,
+        "unitPrice": 35000,
+        "lineTotal": 105000,
+        "photoUrl": "/uploads/kits/de4ed542-1e34-4d3e-a056-6a8cc7bae283.jpg"
+      }
+    ],
+    "totalAmount": 105000,
+    "currency": "RWF",
+    "id": "319625e4-27ad-4406-9c15-e7992ed8f0ca",
+    "reference": "KIT-2026-00001",
+    "status": "approved",
+    "submittedAt": "2026-05-17T10:04:17.752Z",
+    "approvedAt": "2026-05-17T11:11:58.015Z",
+    "approvedBy": "admin@ftprlions.com",
+    "paymentRecords": [
+      {
+        "id": "428445df-fb90-454d-8a63-d4e05ce5f19f",
+        "amount": 105000,
+        "recordedAt": "2026-05-17T11:11:58.015Z",
+        "note": "Payment approved — balance settled",
+        "recordedBy": "admin@ftprlions.com"
+      }
+    ],
+    "parentNotification": {
+      "kind": "approved",
+      "message": "Your kit order payment has been approved. We will announce the collection date soon.",
+      "issuedAt": "2026-05-17T11:11:58.015Z"
+    }
+  },
+  {
+    "accountId": "d4cd4873-d5c7-4f1b-8808-8d1a08c53116",
+    "parentName": "Alain Mbabazi",
+    "parentEmail": "alain@gmail.com",
+    "parentPhone": "+250788352161",
+    "playerId": "a5238354-9036-47cf-93b3-24c44cab222b",
+    "playerName": "Alain Junior",
+    "playerGroup": "U7",
+    "lines": [
+      {
+        "kitId": "cbd49f8e-9b06-4732-a2a0-988361e98c25",
+        "kitType": "Home jersey",
+        "color": "Red and Black",
+        "size": "S",
+        "quantity": 5,
+        "unitPrice": 35000,
+        "lineTotal": 175000,
+        "photoUrl": "/uploads/kits/de4ed542-1e34-4d3e-a056-6a8cc7bae283.jpg"
+      }
+    ],
+    "totalAmount": 175000,
+    "currency": "RWF",
+    "id": "8bf564e8-bdc9-40bf-9ef9-e1730a13c618",
+    "reference": "KIT-2026-00002",
+    "status": "approved",
+    "submittedAt": "2026-05-17T18:44:34.852Z",
+    "approvedAt": "2026-05-17T18:50:09.245Z",
+    "approvedBy": "admin@ftprlions.com",
+    "paymentRecords": [
+      {
+        "id": "c90afdc4-a4ef-4d47-ae6c-c84ab081cadf",
+        "amount": 175000,
+        "recordedAt": "2026-05-17T18:50:09.245Z",
+        "note": "Payment approved — balance settled",
+        "recordedBy": "admin@ftprlions.com"
+      }
+    ],
+    "parentNotification": {
+      "kind": "approved",
+      "message": "Your kit order payment has been approved. We will announce the collection date soon.",
+      "issuedAt": "2026-05-17T18:50:09.245Z"
+    },
+    "deliveryStatus": "delivered",
+    "deliveredAt": "2026-05-17T18:50:12.517Z",
+    "deliveredBy": "admin@ftprlions.com",
+    "deliveryHistory": [
+      {
+        "id": "809b1da6-b4f2-4fe0-9daa-4039f6fc0212",
+        "kind": "delivered",
+        "at": "2026-05-17T18:50:12.517Z",
+        "by": "admin@ftprlions.com"
+      }
+    ]
+  }
+]

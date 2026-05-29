@@ -11,6 +11,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CmsGalleryAlbum, CmsGalleryAlbumImage, SiteContent } from "@/lib/types";
 
 import {
+  CmsConfirmDialog,
   CmsEditorLoadFailed,
   CmsFormActions,
   CmsImageField,
@@ -507,7 +508,7 @@ function GalleryAlbumEditBody({ album, setAlbums }: { album: CmsGalleryAlbum; se
 
 export function GalleryEditor() {
 
-  const { data, loading, err, saving, savePartial, load } = useAdminSiteContent();
+  const { data, loading, err, saving, saveWithNotify, savePartial, load } = useAdminSiteContent();
 
   const [galleryPageTitle, setGalleryPageTitle] = useState("");
 
@@ -516,6 +517,8 @@ export function GalleryEditor() {
   const [albums, setAlbums] = useState<CmsGalleryAlbum[]>([]);
 
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+
+  const [confirmRemoveAlbumId, setConfirmRemoveAlbumId] = useState<string | null>(null);
 
   const detailRef = useRef<HTMLDivElement>(null);
 
@@ -594,10 +597,21 @@ export function GalleryEditor() {
 
 
   const selectedAlbum = selectedAlbumId ? albums.find((a) => a.id === selectedAlbumId) : undefined;
-
-
+  const confirmRemoveAlbum = confirmRemoveAlbumId ? albums.find((a) => a.id === confirmRemoveAlbumId) : null;
 
   return (
+    <>
+    <CmsConfirmDialog
+      open={!!confirmRemoveAlbumId}
+      title="Remove album?"
+      message={confirmRemoveAlbum ? <>Remove album <strong>{confirmRemoveAlbum.title || "Untitled"}</strong> and all its images? This cannot be undone.</> : "Remove this album?"}
+      confirmLabel="Remove album"
+      onConfirm={() => {
+        if (confirmRemoveAlbumId) removeAlbum(confirmRemoveAlbumId);
+        setConfirmRemoveAlbumId(null);
+      }}
+      onCancel={() => setConfirmRemoveAlbumId(null)}
+    />
 
     <section className="page-stack cms-editor-stack cms-editor-stack--cms">
 
@@ -801,13 +815,7 @@ export function GalleryEditor() {
 
                   className="btn btn-secondary admin-btn-sm"
 
-                  onClick={() => {
-
-                    if (typeof window !== "undefined" && !window.confirm("Remove this album from the gallery?")) return;
-
-                    removeAlbum(selectedAlbum.id);
-
-                  }}
+                  onClick={() => setConfirmRemoveAlbumId(selectedAlbum.id)}
 
                 >
 
@@ -831,7 +839,7 @@ export function GalleryEditor() {
 
           primaryLabel="Save gallery"
 
-          onPrimary={() => void savePartial({ galleryPageTitle, galleryPageLead, galleryAlbums: albums })}
+          onPrimary={() => void saveWithNotify({ galleryPageTitle, galleryPageLead, galleryAlbums: albums }, "Gallery saved successfully.")}
 
           saving={saving}
 
@@ -840,7 +848,7 @@ export function GalleryEditor() {
       </CmsSection>
 
     </section>
-
+    </>
   );
 
 }

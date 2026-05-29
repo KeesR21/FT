@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import type { AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 
 type Hit = {
@@ -13,6 +14,8 @@ type Hit = {
   registrationStatus: string;
   status: string;
   parent?: { parentName: string; email: string } | null;
+  playerDanger?: boolean;
+  playerOverdueDays?: number;
 };
 
 export default function AdminSearchPage() {
@@ -21,23 +24,28 @@ export default function AdminSearchPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const run = useCallback(async (query: string) => {
+  const run = useCallback(async (query: string, detail?: AdminOverviewRefreshDetail) => {
     if (query.trim().length < 2) {
       setPlayers([]);
       return;
     }
-    setLoading(true);
-    setErr("");
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setErr("");
+    }
     try {
       const r = await adminApiFetch(`/api/admin/search?q=${encodeURIComponent(query.trim())}`);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const d = await r.json();
       setPlayers(d.players ?? []);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Search failed");
-      setPlayers([]);
+      if (!silent) {
+        setErr(e instanceof Error ? e.message : "Search failed");
+        setPlayers([]);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -49,9 +57,12 @@ export default function AdminSearchPage() {
   }, [run]);
 
   useAdminOverviewRefresh(
-    useCallback(() => {
-      if (q.trim().length >= 2) void run(q);
-    }, [q, run])
+    useCallback(
+      (detail) => {
+        if (q.trim().length >= 2) void run(q, detail);
+      },
+      [q, run]
+    )
   );
 
   return (
@@ -100,8 +111,15 @@ export default function AdminSearchPage() {
             <tbody>
               {players.map((p) => {
                 const isWithdrawn = p.status === "withdrawn";
+                const isDanger = !isWithdrawn && Boolean(p.playerDanger);
                 return (
-                <tr key={p.id} className={clsx(isWithdrawn && "admin-table-row--withdrawn")}>
+                <tr
+                  key={p.id}
+                  className={clsx(
+                    isWithdrawn && "admin-table-row--withdrawn",
+                    isDanger && "admin-pay-row--danger"
+                  )}
+                >
                   <td>
                     <span className="admin-table-cell-player">
                       {isWithdrawn ? (
@@ -111,6 +129,14 @@ export default function AdminSearchPage() {
                       ) : null}
                       <span className={clsx(isWithdrawn && "admin-text-withdrawn")}>{p.playerName}</span>
                       {isWithdrawn ? <span className="admin-withdrawn-pill">Withdrawn</span> : null}
+                      {isDanger ? (
+                        <span
+                          className="admin-danger-flag"
+                          title={`Subscription overdue by ${p.playerOverdueDays ?? 0} day(s)`}
+                        >
+                          DANGER
+                        </span>
+                      ) : null}
                     </span>
                   </td>
                   <td>{p.ageGroup}</td>

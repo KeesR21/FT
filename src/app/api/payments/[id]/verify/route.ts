@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { recordActivity } from "@/lib/activity-log";
+import { getAuthenticatedAdminActor } from "@/lib/admin-actor";
 import { db } from "@/lib/db";
+import { computeMonthlyMembershipWindow } from "@/lib/membership-billing";
 import {
-  getMonthlyMembershipWindow,
   isMembershipFee,
   isRegistrationFee,
-  sendInvoiceIssuedEmail,
-  sendPaymentApprovedEmail,
-  sendRegistrationDecisionEmail
+  sendPaymentApprovedEmail
 } from "@/lib/notifications";
-import { isDuplicateOpenInvoice, monthlyFeePaymentFor } from "@/lib/payment-guards";
-import { getMonthlyFeeForGroup, loadPricing } from "@/lib/pricing-store";
-import { canApproveRegistrations, getCurrentRole } from "@/lib/rbac";
+import { requireAdmin } from "@/lib/require-admin";
 import { jsonMessage } from "@/lib/utils";
 
 const schema = z.object({
@@ -21,10 +19,8 @@ const schema = z.object({
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const role = await getCurrentRole();
-  if (!canApproveRegistrations(role)) {
-    return NextResponse.json(jsonMessage("Forbidden"), { status: 403 });
-  }
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
   let body: unknown = {};
   try {
     body = await req.json();
@@ -37,7 +33,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const { id } = await params;
-  const adminLabel = process.env.ADMIN_EMAIL ?? "admin@ftprlions.com";
+  const existing = await db.getPayment(id);
+  if (!existing) {
+    return NextResponse.json(jsonMessage("Payment not found"), { status: 404 });
+  }
+  if (existing.status === "paid") {
+    return NextResponse.json({
+      message: "Payment was already verified — no changes were made.",
+      payment: existing,
+      idempotent: true
+    });
+  }
+
+  const player = await db.getPlayer(existing.playerId);
+  const isMonthlyMembership = isMembershipFee(existing.paymentFor);
+  const isRegFee = isRegistrationFee(existing.paymentFor);
+  const priorValidUntil = isMonthlyMembership ? player?.subscriptionValidUntil ?? null : null;
+
+  const actor = await getAuthenticatedAdminActor();
+  const adminLabel = actor.label;
   const payment = await db.verifyPayment(id, adminLabel, {
     paymentMethod: parsed.data.paymentMethod,
     paymentNotes: parsed.data.paymentNotes,
@@ -47,52 +61,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json(jsonMessage("Payment not found"), { status: 404 });
   }
 
-  const player = await db.getPlayer(payment.playerId);
-  if (player) {
-    const isRegFee = isRegistrationFee(payment.paymentFor);
-    const isMonthlyMembership = isMembershipFee(payment.paymentFor);
-    let membershipWindow: { startsAt: string; endsAt: string } | null = null;
-    if (isMonthlyMembership) {
-      membershipWindow = getMonthlyMembershipWindow(payment.paidAt ?? new Date().toISOString());
-      await db.updatePlayer(player.id, {
-        subscriptionValidUntil: membershipWindow.endsAt
-      });
-    }
-    if (isRegFee && player.registrationStatus !== "approved") {
-      await db.updateRegistrationStatus(player.id, "approved");
-    }
-    if (isRegFee) {
-      const pricing = await loadPricing();
-      const fee = getMonthlyFeeForGroup(pricing, player.ageGroup);
-      const dueDate = new Date().toISOString();
-      const paymentFor = monthlyFeePaymentFor(dueDate);
-      const existing = await db.listPaymentsForPlayer(player.id);
-      if (!isDuplicateOpenInvoice(existing, { paymentFor, dueDate })) {
-        const monthlyInvoice = await db.createPayment({
-          playerId: player.id,
-          amount: fee.amount,
-          currency: fee.currency,
-          paymentFor,
-          dueDate,
-          invoiceSentAt: new Date().toISOString()
-        });
-        const parent = await db.getParentByPlayerId(player.id);
-        if (parent?.email) {
-          await sendInvoiceIssuedEmail({
-            email: parent.email,
-            parentName: parent.parentName,
-            playerName: player.playerName,
-            group: player.ageGroup,
-            amount: monthlyInvoice.amount,
-            currency: monthlyInvoice.currency,
-            dueDate: monthlyInvoice.dueDate,
-            description: monthlyInvoice.paymentFor
-          });
-        }
-      }
-    }
+  let membershipWindow: { startsAt: string; endsAt: string } | null = null;
+  if (player && isMonthlyMembership) {
+    membershipWindow = computeMonthlyMembershipWindow({
+      paidAt: payment.paidAt ?? new Date().toISOString(),
+      priorValidUntil
+    });
+    await db.updatePlayer(player.id, { subscriptionValidUntil: membershipWindow.endsAt });
+
     const parent = await db.getParentByPlayerId(player.id);
-    if (parent?.email && isMonthlyMembership && membershipWindow) {
+    if (parent?.email) {
       await sendPaymentApprovedEmail({
         email: parent.email,
         playerName: player.playerName,
@@ -104,19 +82,37 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         membershipEndsAt: membershipWindow.endsAt
       });
     }
-    if (parent?.email && isRegFee) {
-      await sendRegistrationDecisionEmail(parent.email, player.playerName, true, player.ageGroup);
-    }
-    return NextResponse.json({
-      message: isMonthlyMembership
-        ? "Monthly fee payment approved"
-        : isRegFee
-          ? "Registration payment verified and player admitted"
-          : "Payment verified",
-      payment,
-      membership: membershipWindow
-    });
   }
 
-  return NextResponse.json({ message: "Payment verified", payment });
+  recordActivity(req, {
+    actorKind: "admin",
+    actorId: actor.id,
+    actorLabel: actor.label,
+    action: "payment.verify",
+    description: `Marked payment as paid (${payment.paymentFor ?? "fee"}) for player ${payment.playerId}`,
+    resourceType: "payment",
+    resourceId: id,
+    previousValue: {
+      status: existing.status,
+      amount: existing.amount,
+      currency: existing.currency,
+      paymentFor: existing.paymentFor
+    },
+    newValue: {
+      status: payment.status,
+      paidAt: payment.paidAt,
+      verifiedBy: payment.verifiedBy,
+      paymentMethod: payment.paymentMethod
+    }
+  });
+
+  return NextResponse.json({
+    message: isMonthlyMembership
+      ? "Monthly fee payment approved"
+      : isRegFee
+        ? "Registration payment verified. Open Applications to admit the player."
+        : "Payment verified",
+    payment,
+    membership: membershipWindow
+  });
 }

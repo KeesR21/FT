@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import {
+  canCreateNewMonthlyInvoice,
   isDuplicateOpenInvoice,
   LEDGER_REGISTRATION_FEE_LABEL,
   monthlyFeePaymentFor
@@ -46,15 +47,32 @@ export async function POST(req: Request) {
       ? LEDGER_REGISTRATION_FEE_LABEL
       : monthlyFeePaymentFor(dueDateIso);
   const existing = await db.listPaymentsForPlayer(parsed.data.playerId);
-  const duplicate = isDuplicateOpenInvoice(existing, {
-    paymentFor: ledgerPaymentFor,
-    dueDate: dueDateIso
-  });
-  if (duplicate) {
-    return NextResponse.json(
-      jsonMessage("Duplicate unpaid/pending invoice exists for same month and description", { payment: duplicate }),
-      { status: 409 }
-    );
+  if (parsed.data.lineKind === "monthly") {
+    const guard = canCreateNewMonthlyInvoice({ player, payments: existing, dueDate: dueDateIso });
+    if (!guard.ok) {
+      return NextResponse.json(
+        jsonMessage(
+          guard.reason === "open_monthly_invoice_exists"
+            ? "Player already has an open monthly invoice. Resolve it before creating another."
+            : guard.reason === "active_subscription_not_renewable_yet"
+              ? "Player still has an active monthly subscription — wait until the last 3 days before renewing."
+              : "Open monthly invoice already exists for this period.",
+          { code: "MONTHLY_INVOICE_BLOCKED", reason: guard.reason, existing: "existing" in guard ? guard.existing : null }
+        ),
+        { status: 409 }
+      );
+    }
+  } else {
+    const duplicate = isDuplicateOpenInvoice(existing, {
+      paymentFor: ledgerPaymentFor,
+      dueDate: dueDateIso
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        jsonMessage("Duplicate unpaid/pending invoice exists for same month and description", { payment: duplicate }),
+        { status: 409 }
+      );
+    }
   }
 
   const payment = await db.createPayment({

@@ -39,7 +39,7 @@ export type Player = {
   subscriptionValidUntil?: string;
   /** Created timestamp in persistent DB backends. */
   createdAt?: string;
-  withdrawnAt?: string;
+  withdrawnAt?: string | null;
   /** Structured answers from the public registration form (admin view/edit). */
   registrationProfile?: RegistrationProfile;
 };
@@ -131,6 +131,8 @@ export type CmsNewsPost = {
   publishedAt?: string;
   /** Optional byline on single-article view */
   author?: string;
+  /** `draft` hides the post from the public site; `published` makes it live. Defaults to `published` when missing. */
+  status?: "draft" | "published";
 };
 /** Academy events (open days, camps, fixtures) — separate from weekly timetable sessions. */
 export type CmsEventItem = {
@@ -142,6 +144,8 @@ export type CmsEventItem = {
   endsAt?: string;
   location?: string;
   image?: string;
+  /** `draft` hides the event from the public site; `published` makes it live. Defaults to `published` when missing. */
+  status?: "draft" | "published";
 };
 export type CmsGalleryItem = { id: string; src: string; caption: string };
 
@@ -296,7 +300,10 @@ export type TimetableSession = {
   id: string;
   /** Display title (e.g. "U9 Training"); shown on the public schedule. */
   title: string;
+  /** Primary squad — first entry in `ageGroups` (notifications, legacy filters). */
   ageGroup: string;
+  /** One or more squads assigned to this session. */
+  ageGroups: string[];
   kind: SessionKind;
   /** ISO datetime — canonical start instant. */
   startsAt: string;
@@ -304,6 +311,12 @@ export type TimetableSession = {
   endsAt: string;
   locationName: string;
   kitRequirements: string;
+  trainerName: string;
+  /** Training topics / activities shown on the public schedule popup. */
+  activities: string[];
+  sessionObjectives: string;
+  equipmentNotes: string;
+  instructorNotes: string;
   /** True after an admin edit; drives the public “Updated” badge. */
   isUpdated: boolean;
   /** ISO timestamp of last substantive edit; null until first update. */

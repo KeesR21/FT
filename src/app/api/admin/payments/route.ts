@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import {
+  daysSinceSubscriptionEnded,
+  isPlayerInDanger,
+  projectUpcomingMembershipWindow
+} from "@/lib/membership-billing";
 import { sendInvoiceIssuedEmail } from "@/lib/notifications";
 import {
+  canCreateNewMonthlyInvoice,
   isDuplicateOpenInvoice,
   LEDGER_REGISTRATION_FEE_LABEL,
   monthKey,
@@ -83,6 +89,14 @@ export async function GET(req: Request) {
       const uiStatus =
         paymentRest.status === "not_paid" || paymentRest.status === "expiring_soon" ? "unpaid" : paymentRest.status;
       const paymentFor = resolveLedgerPaymentFor(rawPaymentFor, paymentRest.dueDate);
+      const category = paymentCategoryKey(paymentFor);
+      const isMonthly = category === "membership";
+      const projectedWindow =
+        isMonthly && player && paymentRest.status !== "paid"
+          ? projectUpcomingMembershipWindow(player)
+          : null;
+      const danger = player ? isPlayerInDanger(player) : false;
+      const overdueDays = player ? daysSinceSubscriptionEnded(player.subscriptionValidUntil) : 0;
       return {
         ...paymentRest,
         paymentFor,
@@ -93,9 +107,13 @@ export async function GET(req: Request) {
         parentId: parent?.id ?? "",
         parentName: parent?.parentName ?? "—",
         parentEmail: parent?.email ?? "",
-        paymentCategory: paymentCategoryKey(paymentFor),
+        paymentCategory: category,
         subscriptionValidUntil: player?.subscriptionValidUntil ?? null,
-        subscriptionUiStatus: subscriptionStatusFromDate(player?.subscriptionValidUntil)
+        subscriptionUiStatus: subscriptionStatusFromDate(player?.subscriptionValidUntil),
+        projectedSubscriptionStartsAt: projectedWindow?.startsAt ?? null,
+        projectedSubscriptionEndsAt: projectedWindow?.endsAt ?? null,
+        playerDanger: danger,
+        playerOverdueDays: overdueDays
       };
     })
   );
@@ -314,30 +332,68 @@ export async function POST(req: Request) {
     parsed.data.lineKind === "registration"
       ? LEDGER_REGISTRATION_FEE_LABEL
       : monthlyFeePaymentFor(effectiveDueDate);
+  const player = await db.getPlayer(parsed.data.playerId);
+  if (!player) {
+    return NextResponse.json({ message: "Player not found." }, { status: 404 });
+  }
   const existing = await db.listPaymentsForPlayer(parsed.data.playerId);
-  const duplicate = isDuplicateOpenInvoice(existing, {
-    paymentFor: ledgerPaymentFor,
-    dueDate: effectiveDueDate
-  });
-  if (duplicate) {
-    const player = await db.getPlayer(parsed.data.playerId);
-    const who = player?.playerName ?? "This player";
-    const month = monthKey(effectiveDueDate);
-    return NextResponse.json(
-      {
-        message: `${who} already has an open invoice for “${resolveLedgerPaymentFor(duplicate.paymentFor, duplicate.dueDate)}” in ${month} (status: ${duplicate.status}). Either pick a different due month, switch registration vs monthly, or resolve that row in Transactions (mark paid or adjust).`,
-        code: "DUPLICATE_OPEN_INVOICE",
-        existingPayment: {
-          id: duplicate.id,
-          status: duplicate.status,
-          dueDate: duplicate.dueDate,
-          amount: duplicate.amount,
-          currency: duplicate.currency,
-          paymentFor: resolveLedgerPaymentFor(duplicate.paymentFor, duplicate.dueDate)
-        }
-      },
-      { status: 409 }
-    );
+  const who = player.playerName;
+
+  if (parsed.data.lineKind === "monthly") {
+    const guard = canCreateNewMonthlyInvoice({
+      player,
+      payments: existing,
+      dueDate: effectiveDueDate
+    });
+    if (!guard.ok) {
+      const existingRow = "existing" in guard ? guard.existing : undefined;
+      const messageMap: Record<typeof guard.reason, string> = {
+        open_monthly_invoice_exists: `${who} already has an open monthly invoice. Resolve that one (mark paid or void) before creating another. Only one open monthly invoice is allowed per player at a time.`,
+        active_subscription_not_renewable_yet: `${who} still has an active monthly subscription. A renewal invoice can only be created when the membership is in its last 3 days or has expired.`,
+        duplicate_for_month: `${who} already has an open invoice for ${monthKey(effectiveDueDate)}. Either resolve it or pick a different month.`
+      };
+      return NextResponse.json(
+        {
+          message: messageMap[guard.reason],
+          code: "MONTHLY_INVOICE_BLOCKED",
+          reason: guard.reason,
+          existingPayment: existingRow
+            ? {
+                id: existingRow.id,
+                status: existingRow.status,
+                dueDate: existingRow.dueDate,
+                amount: existingRow.amount,
+                currency: existingRow.currency,
+                paymentFor: resolveLedgerPaymentFor(existingRow.paymentFor, existingRow.dueDate)
+              }
+            : undefined
+        },
+        { status: 409 }
+      );
+    }
+  } else {
+    const duplicate = isDuplicateOpenInvoice(existing, {
+      paymentFor: ledgerPaymentFor,
+      dueDate: effectiveDueDate
+    });
+    if (duplicate) {
+      const month = monthKey(effectiveDueDate);
+      return NextResponse.json(
+        {
+          message: `${who} already has an open invoice for “${resolveLedgerPaymentFor(duplicate.paymentFor, duplicate.dueDate)}” in ${month} (status: ${duplicate.status}). Resolve that row first.`,
+          code: "DUPLICATE_OPEN_INVOICE",
+          existingPayment: {
+            id: duplicate.id,
+            status: duplicate.status,
+            dueDate: duplicate.dueDate,
+            amount: duplicate.amount,
+            currency: duplicate.currency,
+            paymentFor: resolveLedgerPaymentFor(duplicate.paymentFor, duplicate.dueDate)
+          }
+        },
+        { status: 409 }
+      );
+    }
   }
 
   const payment = await db.createPayment({
@@ -351,28 +407,25 @@ export async function POST(req: Request) {
     paymentNotes: parsed.data.paymentNotes,
     invoiceSentAt: new Date().toISOString()
   });
-  const player = await db.getPlayer(payment.playerId);
-  if (player) {
-    const parent = await db.getParentByPlayerId(player.id);
-    if (parent?.email) {
-      await sendInvoiceIssuedEmail({
-        email: parent.email,
-        parentName: parent.parentName,
-        playerName: player.playerName,
-        group: player.ageGroup,
-        amount: payment.amount,
-        currency: payment.currency,
-        dueDate: payment.dueDate,
-        description: payment.paymentFor
-      });
-      await db.addMessage({
-        channel: "individual",
-        playerId: player.id,
-        subject: `Invoice issued: ${payment.paymentFor}`,
-        body: `Amount ${payment.amount.toLocaleString()} ${payment.currency}, due ${payment.dueDate.slice(0, 10)}.`,
-        sentBy: "Finance admin"
-      });
-    }
+  const parent = await db.getParentByPlayerId(player.id);
+  if (parent?.email) {
+    await sendInvoiceIssuedEmail({
+      email: parent.email,
+      parentName: parent.parentName,
+      playerName: player.playerName,
+      group: player.ageGroup,
+      amount: payment.amount,
+      currency: payment.currency,
+      dueDate: payment.dueDate,
+      description: payment.paymentFor
+    });
+    await db.addMessage({
+      channel: "individual",
+      playerId: player.id,
+      subject: `Invoice issued: ${payment.paymentFor}`,
+      body: `Amount ${payment.amount.toLocaleString()} ${payment.currency}, due ${payment.dueDate.slice(0, 10)}.`,
+      sentBy: "Finance admin"
+    });
   }
 
   revalidateAdminViews();

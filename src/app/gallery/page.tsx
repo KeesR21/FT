@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PublicRegistrationLink } from "@/components/public/public-registration-link";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
 import type { Metadata } from "next";
 
@@ -31,9 +32,7 @@ export default async function GalleryPage() {
             <Link href="/contact" className="btn btn-secondary">
               Ask a question
             </Link>
-            <Link href="/register" className="btn">
-              Register
-            </Link>
+            <PublicRegistrationLink className="btn">Register</PublicRegistrationLink>
           </div>
         </div>
       </section>

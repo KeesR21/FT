@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   addDays,
   addMinutes,
@@ -14,14 +14,17 @@ import {
   startOfDay,
   startOfWeek
 } from "date-fns";
+import { TagInput } from "@/components/admin/TagInput";
 import { AGE_GROUPS } from "@/lib/age-groups";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, parseAdminApiBody, readAdminApiError } from "@/lib/admin-api-fetch";
+import { extractApiMessage, formatApiErrorMessage } from "@/lib/api-error";
 import type { TimetableSession } from "@/lib/types";
+import { findScheduleConflicts } from "@/lib/timetable-conflicts";
+import { ageGroupColor, defaultSessionTitle } from "@/lib/timetable-session";
 import {
   TIMETABLE_MAX_END_HOUR,
   TIMETABLE_MAX_START_HOUR,
   TIMETABLE_MIN_START_HOUR,
-  defaultSessionTitle,
   validateScheduleWindow,
   validateSessionTimes
 } from "@/lib/timetable-validation";
@@ -82,6 +85,18 @@ function isSlotInPast(slotStart: Date, now: Date) {
   return slotStart.getTime() < now.getTime() - PAST_GRACE_MS;
 }
 
+function resolveEndsAtPreview(
+  start: Date,
+  endMode: "duration" | "endTime",
+  durationMins: number,
+  endChoices: { at: Date }[],
+  endChoiceIdx: number
+): Date | null {
+  if (endMode === "duration") return addMinutes(start, durationMins);
+  const ch = endChoices[endChoiceIdx];
+  return ch ? ch.at : null;
+}
+
 type ModalState =
   | null
   | { mode: "create"; slotStart: Date }
@@ -97,10 +112,15 @@ export function AdminTimetableCalendar() {
   const [durationMins, setDurationMins] = useState<number>(60);
   const [endChoiceIdx, setEndChoiceIdx] = useState(0);
 
-  const [ageGroup, setAgeGroup] = useState("U9");
+  const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>(["U9"]);
   const [kind, setKind] = useState<"training" | "match">("training");
   const [locationName, setLocationName] = useState(LOCATION_PRESETS[0]!);
   const [kitRequirements, setKitRequirements] = useState("Full kit");
+  const [trainerName, setTrainerName] = useState("");
+  const [activities, setActivities] = useState<string[]>([]);
+  const [sessionObjectives, setSessionObjectives] = useState("");
+  const [equipmentNotes, setEquipmentNotes] = useState("");
+  const [instructorNotes, setInstructorNotes] = useState("");
 
   const weekStart = useMemo(
     () => startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 1 }),
@@ -120,7 +140,7 @@ export function AdminTimetableCalendar() {
     setErr("");
     try {
       const r = await fetch("/api/timetable", { credentials: "include", cache: "no-store" });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const data = (await r.json()) as { sessions: TimetableSession[] };
       setSessions([...data.sessions].sort((a, b) => a.startsAt.localeCompare(b.startsAt)));
     } catch (e) {
@@ -154,7 +174,54 @@ export function AdminTimetableCalendar() {
     return buildEndTimeChoices(s);
   }, [modal]);
 
-  const computedTitle = useMemo(() => defaultSessionTitle(ageGroup, kind), [ageGroup, kind]);
+  const computedTitle = useMemo(
+    () => defaultSessionTitle(selectedAgeGroups.length ? selectedAgeGroups : ["U9"], kind),
+    [selectedAgeGroups, kind]
+  );
+
+  const previewConflicts = useMemo(() => {
+    if (!modal) return [];
+    const start =
+      modal.mode === "create" ? modal.slotStart : parseISO(modal.session.startsAt);
+    if (!isValid(start)) return [];
+    const endsAtDate = resolveEndsAtPreview(start, endMode, durationMins, endChoices, endChoiceIdx);
+    if (!endsAtDate) return [];
+    const primary = selectedAgeGroups[0] ?? "U9";
+    const candidate = {
+      id: modal.mode === "edit" ? modal.session.id : "",
+      title: computedTitle,
+      ageGroup: primary,
+      ageGroups: selectedAgeGroups.length ? selectedAgeGroups : [primary],
+      kind,
+      startsAt: start.toISOString(),
+      endsAt: endsAtDate.toISOString(),
+      locationName: locationName.trim()
+    };
+    return findScheduleConflicts(sessions, candidate, {
+      excludeId: modal.mode === "edit" ? modal.session.id : undefined
+    });
+  }, [
+    modal,
+    sessions,
+    selectedAgeGroups,
+    kind,
+    locationName,
+    computedTitle,
+    endMode,
+    durationMins,
+    endChoices,
+    endChoiceIdx
+  ]);
+
+  function toggleAgeGroup(g: string) {
+    setSelectedAgeGroups((prev) => {
+      if (prev.includes(g)) {
+        const next = prev.filter((x) => x !== g);
+        return next.length ? next : [g];
+      }
+      return [...prev, g];
+    });
+  }
 
   function openCreate(day: Date, hour: number) {
     setErr("");
@@ -166,10 +233,15 @@ export function AdminTimetableCalendar() {
     setEndMode("duration");
     setDurationMins(60);
     setEndChoiceIdx(0);
-    setAgeGroup("U9");
+    setSelectedAgeGroups(["U9"]);
     setKind("training");
     setLocationName(LOCATION_PRESETS[0]!);
     setKitRequirements("Full kit");
+    setTrainerName("");
+    setActivities([]);
+    setSessionObjectives("");
+    setEquipmentNotes("");
+    setInstructorNotes("");
     setModal({ mode: "create", slotStart });
   }
 
@@ -178,10 +250,15 @@ export function AdminTimetableCalendar() {
     const start = parseISO(s.startsAt);
     const end = parseISO(s.endsAt);
     if (!isValid(start)) return;
-    setAgeGroup(s.ageGroup);
+    setSelectedAgeGroups(s.ageGroups?.length ? [...s.ageGroups] : [s.ageGroup]);
     setKind(s.kind);
     setLocationName(s.locationName);
     setKitRequirements(s.kitRequirements);
+    setTrainerName(s.trainerName ?? "");
+    setActivities(s.activities?.length ? [...s.activities] : []);
+    setSessionObjectives(s.sessionObjectives ?? "");
+    setEquipmentNotes(s.equipmentNotes ?? "");
+    setInstructorNotes(s.instructorNotes ?? "");
     const mins = isValid(end) ? differenceInMinutes(end, start) : 60;
     const matchDur = (DURATION_OPTIONS as readonly number[]).includes(mins) ? mins : 60;
     setDurationMins(matchDur);
@@ -231,14 +308,25 @@ export function AdminTimetableCalendar() {
       return;
     }
 
+    if (!selectedAgeGroups.length) {
+      setErr("Select at least one age group.");
+      return;
+    }
+
     const body = {
       title: computedTitle.trim(),
-      ageGroup,
+      ageGroup: selectedAgeGroups[0],
+      ageGroups: selectedAgeGroups,
       kind,
       startsAt,
       endsAt,
       locationName: locationName.trim(),
-      kitRequirements: kitRequirements.trim()
+      kitRequirements: kitRequirements.trim(),
+      trainerName: trainerName.trim(),
+      activities,
+      sessionObjectives: sessionObjectives.trim(),
+      equipmentNotes: equipmentNotes.trim(),
+      instructorNotes: instructorNotes.trim()
     };
 
     try {
@@ -250,8 +338,16 @@ export function AdminTimetableCalendar() {
         });
         const raw = await r.text();
         if (!r.ok) {
-          const j = JSON.parse(raw) as { message?: string };
-          throw new Error(j.message ?? raw);
+          let msg = extractApiMessage(raw);
+          try {
+            const j = JSON.parse(raw) as { message?: string; conflicts?: { reason: string }[] };
+            const conflict = j.conflicts?.map((c) => c.reason).filter(Boolean).join(" ");
+            if (conflict) msg = conflict;
+            else if (j.message) msg = j.message;
+          } catch {
+            /* use extracted message */
+          }
+          throw new Error(formatApiErrorMessage(r.status, msg));
         }
       } else {
         const r = await adminApiFetch(`/api/admin/timetable/${modal.session.id}`, {
@@ -261,8 +357,16 @@ export function AdminTimetableCalendar() {
         });
         const raw = await r.text();
         if (!r.ok) {
-          const j = JSON.parse(raw) as { message?: string };
-          throw new Error(j.message ?? raw);
+          let msg = extractApiMessage(raw);
+          try {
+            const j = JSON.parse(raw) as { message?: string; conflicts?: { reason: string }[] };
+            const conflict = j.conflicts?.map((c) => c.reason).filter(Boolean).join(" ");
+            if (conflict) msg = conflict;
+            else if (j.message) msg = j.message;
+          } catch {
+            /* use extracted message */
+          }
+          throw new Error(formatApiErrorMessage(r.status, msg));
         }
       }
       closeModal();
@@ -272,10 +376,31 @@ export function AdminTimetableCalendar() {
     }
   }
 
+  async function duplicateSession() {
+    if (!modal || modal.mode !== "edit") return;
+    const s = modal.session;
+    const start = parseISO(s.startsAt);
+    const end = parseISO(s.endsAt);
+    if (!isValid(start) || !isValid(end)) return;
+    setErr("");
+    setEndMode("duration");
+    setDurationMins(differenceInMinutes(end, start));
+    setSelectedAgeGroups(s.ageGroups?.length ? [...s.ageGroups] : [s.ageGroup]);
+    setKind(s.kind);
+    setLocationName(s.locationName);
+    setKitRequirements(s.kitRequirements);
+    setTrainerName(s.trainerName ?? "");
+    setActivities(s.activities?.length ? [...s.activities] : []);
+    setSessionObjectives(s.sessionObjectives ?? "");
+    setEquipmentNotes(s.equipmentNotes ?? "");
+    setInstructorNotes(s.instructorNotes ?? "");
+    setModal({ mode: "create", slotStart: addMinutes(start, 7 * 24 * 60) });
+  }
+
   async function removeSession(id: string) {
     if (!confirm("Delete this session?")) return;
     const r = await adminApiFetch(`/api/admin/timetable/${id}`, { method: "DELETE" });
-    if (!r.ok) setErr(await r.text());
+    if (!r.ok) setErr(await readAdminApiError(r));
     else {
       closeModal();
       load();
@@ -352,12 +477,19 @@ export function AdminTimetableCalendar() {
                   <div className="admin-sched__events">
                     {daySessions.map((s) => {
                       const st = eventBlockStyle(s.startsAt, s.endsAt);
+                      const c = ageGroupColor(s.ageGroup);
                       return (
                         <button
                           key={s.id}
                           type="button"
                           className="admin-sched__event"
-                          style={{ top: st.top, height: st.height }}
+                          style={{
+                            top: st.top,
+                            height: st.height,
+                            background: c.bg,
+                            borderColor: c.border,
+                            color: c.text
+                          }}
                           onClick={(e) => {
                             e.stopPropagation();
                             openEdit(s);
@@ -396,20 +528,45 @@ export function AdminTimetableCalendar() {
               ) : null}
             </p>
 
+            {previewConflicts.length > 0 ? (
+              <div className="admin-sched-conflicts" role="alert">
+                <strong>Scheduling conflict</strong>
+                <ul>
+                  {previewConflicts.map((c, i) => (
+                    <li key={`${c.sessionId}-${i}`}>{c.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <fieldset className="admin-sched-groups">
+              <legend>Squads / age groups</legend>
+              <div className="admin-sched-groups__grid">
+                {AGE_GROUPS.map((g) => {
+                  const on = selectedAgeGroups.includes(g);
+                  const c = ageGroupColor(g);
+                  return (
+                    <label
+                      key={g}
+                      className={`admin-sched-groups__chip${on ? " admin-sched-groups__chip--on" : ""}`}
+                      style={
+                        on
+                          ? ({ borderColor: c.border, background: c.bg, color: c.text } as CSSProperties)
+                          : undefined
+                      }
+                    >
+                      <input type="checkbox" checked={on} onChange={() => toggleAgeGroup(g)} />
+                      {g}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
             <div className="form-grid-responsive admin-form-grid--2">
               <label className="form-label">
-                <span>Title (from group &amp; type)</span>
+                <span>Title (auto)</span>
                 <input className="input-field" readOnly value={computedTitle} />
-              </label>
-              <label className="form-label">
-                <span>Age group</span>
-                <select className="input-field" value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)}>
-                  {AGE_GROUPS.map((g) => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
               </label>
               <label className="form-label">
                 <span>Type</span>
@@ -481,24 +638,77 @@ export function AdminTimetableCalendar() {
                 </datalist>
               </label>
               <label className="form-label">
-                <span>Kit / notes</span>
+                <span>Trainer / instructor</span>
+                <input className="input-field" value={trainerName} onChange={(e) => setTrainerName(e.target.value)} />
+              </label>
+              <label className="form-label">
+                <span>Kit requirements</span>
                 <input className="input-field" value={kitRequirements} onChange={(e) => setKitRequirements(e.target.value)} />
               </label>
+              <label className="form-label admin-form-span-2">
+                <span>Session objectives</span>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  value={sessionObjectives}
+                  onChange={(e) => setSessionObjectives(e.target.value)}
+                />
+              </label>
+              <label className="form-label admin-form-span-2">
+                <span>Equipment notes (optional)</span>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  value={equipmentNotes}
+                  onChange={(e) => setEquipmentNotes(e.target.value)}
+                />
+              </label>
+              <label className="form-label admin-form-span-2">
+                <span>Staff notes (not shown publicly)</span>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  value={instructorNotes}
+                  onChange={(e) => setInstructorNotes(e.target.value)}
+                />
+              </label>
             </div>
+
+            <TagInput
+              label="Training activities & topics"
+              hint="Shown on the public schedule when parents tap a date."
+              values={activities}
+              onChange={setActivities}
+              placeholder="e.g. Passing drills, Small-sided games"
+            />
 
             {err ? <p className="form-message">{err}</p> : null}
 
             <div className="admin-sched-modal__actions">
-              <button type="button" className="btn" onClick={saveSession}>
+              <button
+                type="button"
+                className="btn"
+                onClick={saveSession}
+                disabled={previewConflicts.length > 0}
+              >
                 {modal.mode === "create" ? "Save session" : "Save changes"}
               </button>
               <button type="button" className="btn btn-secondary" onClick={closeModal}>
                 Cancel
               </button>
               {modal.mode === "edit" ? (
-                <button type="button" className="btn btn-secondary admin-sched-modal__delete" onClick={() => removeSession(modal.session.id)}>
-                  Delete
-                </button>
+                <>
+                  <button type="button" className="btn btn-secondary" onClick={duplicateSession}>
+                    Duplicate (+1 week)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary admin-sched-modal__delete"
+                    onClick={() => removeSession(modal.session.id)}
+                  >
+                    Delete
+                  </button>
+                </>
               ) : null}
             </div>
           </div>
@@ -528,7 +738,7 @@ export function AdminTimetableCalendar() {
                 return (
                   <tr key={s.id}>
                     <td>{s.title}</td>
-                    <td>{s.ageGroup}</td>
+                    <td>{s.ageGroups?.length ? s.ageGroups.join(", ") : s.ageGroup}</td>
                     <td>{isValid(a) ? format(a, "PPp") : s.startsAt}</td>
                     <td>{isValid(b) ? format(b, "PPp") : s.endsAt}</td>
                     <td>

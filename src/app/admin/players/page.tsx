@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import type { AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import { AGE_GROUPS } from "@/lib/age-groups";
 
@@ -15,6 +16,8 @@ type Row = {
   registrationStatus: string;
   subscriptionUi: string;
   parent?: { parentName: string; email: string } | null;
+  playerDanger?: boolean;
+  playerOverdueDays?: number;
 };
 
 type VerifyIssue = {
@@ -59,22 +62,25 @@ export default function AdminPlayersPage() {
   const [phase, setPhase] = useState<"idle" | "verifying" | "importing">("idle");
   const [dragActive, setDragActive] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErr("");
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setErr("");
+    }
     try {
       const q = new URLSearchParams();
       if (withdrawn) q.set("withdrawn", "1");
       if (group) q.set("group", group);
       q.set("registration", registration);
       const r = await adminApiFetch(`/api/admin/players?${q}`);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const data = await r.json();
       setRows(data.players);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to load");
+      if (!silent) setErr(e instanceof Error ? e.message : "Failed to load");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [withdrawn, group, registration]);
 
@@ -197,9 +203,9 @@ export default function AdminPlayersPage() {
           profiles that admins complete one by one.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-          <a className="btn btn-secondary" href="/api/admin/players/import/template">
+          <Link className="btn btn-secondary" href="/api/admin/players/import/template">
             Download CSV template
-          </a>
+          </Link>
         </div>
         <div
           className="card"
@@ -367,8 +373,15 @@ export default function AdminPlayersPage() {
             <tbody>
               {rows.map((p) => {
                 const isWithdrawn = p.status === "withdrawn";
+                const isDanger = !isWithdrawn && Boolean(p.playerDanger);
                 return (
-                <tr key={p.id} className={clsx(isWithdrawn && "admin-table-row--withdrawn")}>
+                <tr
+                  key={p.id}
+                  className={clsx(
+                    isWithdrawn && "admin-table-row--withdrawn",
+                    isDanger && "admin-pay-row--danger"
+                  )}
+                >
                   <td>
                     <span className="admin-table-cell-player">
                       {isWithdrawn ? (
@@ -380,6 +393,14 @@ export default function AdminPlayersPage() {
                       {isWithdrawn ? (
                         <span className="admin-withdrawn-pill" title="This player has left the club">
                           Withdrawn
+                        </span>
+                      ) : null}
+                      {isDanger ? (
+                        <span
+                          className="admin-danger-flag"
+                          title={`Subscription overdue by ${p.playerOverdueDays ?? 0} day(s)`}
+                        >
+                          DANGER
                         </span>
                       ) : null}
                     </span>

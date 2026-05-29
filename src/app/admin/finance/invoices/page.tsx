@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { SystemNotice } from "@/components/system/system-notice";
+import { adminApiFetch, formatAdminApiMessage } from "@/lib/admin-api-fetch";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
 import type { PaymentStatus } from "@/lib/types";
@@ -231,11 +232,15 @@ export default function FinanceInvoicesPage() {
     }
   }, []);
 
+  const refreshFromAdminEvent = useCallback(() => {
+    void load();
+  }, [load]);
+
   useEffect(() => {
     void load();
   }, [load]);
 
-  useAdminOverviewRefresh(load);
+  useAdminOverviewRefresh(refreshFromAdminEvent);
 
   function openInvoicePdfTab(url: string) {
     if (typeof window === "undefined" || !url) return;
@@ -286,7 +291,7 @@ export default function FinanceInvoicesPage() {
           });
           return;
         }
-        setErr(String(data?.message || `Action failed (${r.status})`));
+        setErr(formatAdminApiMessage(r.status, String(data?.message || "")));
         return;
       }
       const msg = String(data?.message || "Done");
@@ -351,7 +356,7 @@ export default function FinanceInvoicesPage() {
         </Link>
       </header>
 
-      {err ? <p className="form-message">{err}</p> : null}
+      {err ? <SystemNotice variant="error">{err}</SystemNotice> : null}
       {sendConflict ? (
         <div className="finance-invoice-send-warn" role="alert">
           <p className="finance-invoice-send-warn__title">This invoice was already sent</p>
@@ -376,17 +381,19 @@ export default function FinanceInvoicesPage() {
         </div>
       ) : null}
       {notice ? (
-        <div className="finance-toast finance-toast--ok" role="status">
-          <p className="finance-toast__text">{notice}</p>
-          {noticePdfUrl ? (
-            <p className="finance-toast__pdf">
-              <a className="ks-text-link" href={noticePdfUrl} target="_blank" rel="noopener noreferrer">
-                Open invoice PDF
-              </a>{" "}
-              if it didn&apos;t open automatically.
-            </p>
-          ) : null}
-        </div>
+        <SystemNotice variant="success" className="finance-toast finance-toast--ok">
+          <>
+            {notice}
+            {noticePdfUrl ? (
+              <span className="finance-toast__pdf">
+                <a className="ks-text-link" href={noticePdfUrl} target="_blank" rel="noopener noreferrer">
+                  Open invoice PDF
+                </a>{" "}
+                if it didn&apos;t open automatically.
+              </span>
+            ) : null}
+          </>
+        </SystemNotice>
       ) : null}
 
       <div className="card finance-panel finance-eligible-panel">

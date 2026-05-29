@@ -97,3 +97,10 @@ export async function markCombinedInvoiceSent(
   await writeStore(file);
   return hit;
 }
+
+/** Wipe every combined-invoice log entry. Used by the admin "wipe players" tool. */
+export async function clearCombinedInvoiceLogs(): Promise<void> {
+  const empty: CombinedFile = { entries: [] };
+  await mkdir(INVOICE_DIR, { recursive: true });
+  await writeFile(COMBINED_LOG_FILE, JSON.stringify(empty, null, 2), "utf8");
+}

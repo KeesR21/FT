@@ -6,6 +6,15 @@ import { db } from "@/lib/db";
 import { resolveLedgerPaymentFor } from "@/lib/payment-guards";
 import { isApprovedOnRoster, isPendingRegistration, isWithdrawnPlayer } from "@/lib/player-roster";
 import { subscriptionStatusFromDate } from "@/lib/subscription-ui";
+import {
+  IconCurrency,
+  IconUsers,
+  IconClipboard,
+  IconClock,
+  IconCalendarCheck,
+  IconUserPlus,
+  IconTrendUp
+} from "@/components/admin/admin-nav-icons";
 import type { Payment } from "@/lib/types";
 
 const money = new Intl.NumberFormat("en-RW", { style: "currency", currency: "RWF" });
@@ -108,34 +117,34 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="admin-dash">
-      <p className="admin-dash-intro muted" style={{ margin: "0 0 1rem", fontSize: "0.9rem" }}>
+      <p className="admin-dash-intro">
         Operations snapshot — players, registrations, payments, and subscriptions.
       </p>
 
       <div className="admin-dash-stats">
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--emerald" aria-hidden>
-            RWF
+            <IconCurrency />
           </div>
           <div className="admin-stat-card-body">
-            <h3>Collected (mock)</h3>
+            <h3>Revenue collected</h3>
             <p className="admin-stat-card-value">{money.format(revenue)}</p>
-            <p className="admin-stat-card-trend">Paid invoices in mock data</p>
+            <p className="admin-stat-card-trend--muted">All paid invoices</p>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--violet" aria-hidden>
-            AP
+            <IconUsers />
           </div>
           <div className="admin-stat-card-body">
             <h3>Active players</h3>
             <p className="admin-stat-card-value">{activePlayers}</p>
-            <p className="admin-stat-card-trend--muted">Approved, not withdrawn (includes lapsed subscription)</p>
+            <p className="admin-stat-card-trend--muted">Approved on roster</p>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--sky" aria-hidden>
-            PR
+            <IconClipboard />
           </div>
           <div className="admin-stat-card-body">
             <h3>Pending applications</h3>
@@ -151,12 +160,12 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--amber" aria-hidden>
-            7d
+            <IconClock />
           </div>
           <div className="admin-stat-card-body">
-            <h3>Subs expiring (7d)</h3>
+            <h3>Subs expiring soon</h3>
             <p className="admin-stat-card-value">{expiringSubs}</p>
-            <p className="admin-stat-card-trend--muted">Renewal follow-up</p>
+            <p className="admin-stat-card-trend--muted">Within 7 days</p>
           </div>
         </div>
       </div>
@@ -216,35 +225,35 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="admin-dash-stats" style={{ marginTop: "1rem" }}>
+      <div className="admin-dash-stats admin-dash-stats--secondary">
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--amber" aria-hidden>
-            D
+            <IconCalendarCheck />
           </div>
           <div className="admin-stat-card-body">
             <h3>Membership deadlines today</h3>
             <p className="admin-stat-card-value">{membershipsDeadlineToday}</p>
-            <p className="admin-stat-card-trend--muted">Subscription ends on current day</p>
+            <p className="admin-stat-card-trend--muted">Subscriptions ending today</p>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--sky" aria-hidden>
-            NJ
+            <IconUserPlus />
           </div>
           <div className="admin-stat-card-body">
-            <h3>New joined today</h3>
+            <h3>New players today</h3>
             <p className="admin-stat-card-value">{newJoinedToday}</p>
-            <p className="admin-stat-card-trend--muted">Approved players created today</p>
+            <p className="admin-stat-card-trend--muted">Approved today</p>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card-icon admin-stat-card-icon--violet" aria-hidden>
-            TA
+            <IconTrendUp />
           </div>
           <div className="admin-stat-card-body">
-            <h3>Today applications</h3>
+            <h3>Applications today</h3>
             <p className="admin-stat-card-value">{applicationsToday}</p>
-            <p className="admin-stat-card-trend--muted">Registrations created today</p>
+            <p className="admin-stat-card-trend--muted">New registrations</p>
           </div>
         </div>
       </div>
@@ -269,12 +278,10 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="admin-panel admin-panel--flush">
-          <div style={{ padding: "1.15rem 1.25rem 0" }}>
-            <h2 className="admin-panel-title" style={{ marginBottom: 0 }}>
-              Recent payments
-            </h2>
+          <div className="admin-panel-flush-header">
+            <h2 className="admin-panel-title">Recent payments</h2>
           </div>
-          <div className="admin-table-wrap" style={{ marginTop: 0, borderRadius: 0, borderLeft: "none", borderRight: "none" }}>
+          <div className="admin-table-wrap admin-table-wrap--flush">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -315,15 +322,15 @@ export default async function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
-          <div style={{ padding: "0.75rem 1.25rem 1rem" }}>
-            <Link href="/admin/finance/transactions" className="ks-text-link admin-quick-link" style={{ color: "var(--ks-accent)" }}>
+          <div className="admin-panel-flush-footer">
+            <Link href="/admin/finance/transactions" className="admin-panel-footer-link">
               Open finance ledger →
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="admin-panel" style={{ marginTop: "1rem" }}>
+      <div className="admin-panel admin-quick-actions-panel">
         <h2 className="admin-panel-title">Quick actions</h2>
         <div className="k-two-col card-cta-row">
           <Link href="/admin/players" className="btn">

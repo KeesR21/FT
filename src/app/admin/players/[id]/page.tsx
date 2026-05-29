@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AGE_GROUPS } from "@/lib/age-groups";
-import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { ADMIN_OVERVIEW_REFRESH, type AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
+import { adminApiFetch, parseAdminApiBody, readAdminApiError } from "@/lib/admin-api-fetch";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import {
   emptyRegistrationProfile,
@@ -19,9 +19,15 @@ import {
 } from "@/lib/registration-profile";
 import { REGISTRATION_SELECT } from "@/lib/registration-schema";
 import { MembershipBillingCards } from "@/components/admin/membership-billing-cards";
-import { computeMembershipLifecyclePhase, membershipPrimaryStatusLabel } from "@/lib/membership-billing";
+import { usePortalAuthNotify } from "@/components/portal/portal-auth-notify";
+import {
+  computeMembershipLifecyclePhase,
+  daysSinceSubscriptionEnded,
+  isPlayerInDanger,
+  membershipPrimaryStatusLabel
+} from "@/lib/membership-billing";
 import { subscriptionStatusFromDate } from "@/lib/subscription-ui";
-import type { Parent, Player, RegistrationProfile, RegistrationStatus } from "@/lib/types";
+import type { Parent, Player, RegistrationProfile, RegistrationStatus, PlayerStatus } from "@/lib/types";
 
 type PaymentRow = {
   id: string;
@@ -65,6 +71,8 @@ export default function AdminPlayerDetailPage() {
   const [perfFocus, setPerfFocus] = useState("");
   const [regProfile, setRegProfile] = useState<RegistrationProfile>(emptyRegistrationProfile);
   const [decisionBusy, setDecisionBusy] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const notify = usePortalAuthNotify();
 
   const subscriptionUi = useMemo(
     () => (player ? subscriptionStatusFromDate(player.subscriptionValidUntil) : "ended"),
@@ -89,12 +97,15 @@ export default function AdminPlayerDetailPage() {
   const membershipEnd = player?.subscriptionValidUntil ? String(player.subscriptionValidUntil).slice(0, 10) : "—";
   const admissionReady = regFeePaid(payments);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErr("");
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setErr("");
+    }
     try {
       const r = await adminApiFetch(`/api/admin/players/${id}`);
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const data = (await r.json()) as {
         player: Player;
         parent: Parent | null;
@@ -107,9 +118,9 @@ export default function AdminPlayerDetailPage() {
       setPerformance(data.performance ?? []);
       setRegProfile(mergeRegistrationProfile(data.player.registrationProfile, {}));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Load failed");
+      if (!silent) setErr(e instanceof Error ? e.message : "Load failed");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [id]);
 
@@ -121,31 +132,53 @@ export default function AdminPlayerDetailPage() {
 
   async function saveAll() {
     if (!player || !parent) return;
-    setErr("");
-    const r = await adminApiFetch(`/api/admin/players/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        playerName: player.playerName,
-        dateOfBirth: player.dateOfBirth,
-        ageGroup: player.ageGroup,
-        heightCm: player.heightCm,
-        weightKg: player.weightKg,
-        developmentNotes: player.developmentNotes ?? "",
-        subscriptionValidUntil: player.subscriptionValidUntil ?? null,
-        parentName: parent.parentName,
-        phoneNumber: parent.phoneNumber,
-        email: parent.email,
-        address: parent.address,
-        registrationProfile: regProfile
-      })
-    });
-    if (!r.ok) {
-      setErr(await r.text());
+    const emailTrim = parent.email.trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim);
+    if (!emailOk) {
+      notify.error("Enter a valid parent email address.", { duration: 7000 });
       return;
     }
-    window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
-    router.refresh();
+    if (player.playerName.trim().length < 2) {
+      notify.error("Player name must be at least 2 characters.", { duration: 6500 });
+      return;
+    }
+    setSaveBusy(true);
+    setErr("");
+    try {
+      const r = await adminApiFetch(`/api/admin/players/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerName: player.playerName.trim(),
+          dateOfBirth: player.dateOfBirth,
+          ageGroup: player.ageGroup,
+          heightCm: player.heightCm,
+          weightKg: player.weightKg,
+          status: player.status,
+          registrationStatus: player.registrationStatus,
+          developmentNotes: player.developmentNotes ?? "",
+          subscriptionValidUntil: player.subscriptionValidUntil ?? null,
+          parentName: parent.parentName,
+          phoneNumber: parent.phoneNumber,
+          email: emailTrim,
+          address: parent.address,
+          registrationProfile: regProfile
+        })
+      });
+      const parsed = await parseAdminApiBody<{ player?: Player }>(r);
+      if (!parsed.ok) {
+        notify.error(parsed.message, { duration: 8000 });
+        return;
+      }
+      let nextPlayer = player;
+      if (parsed.data.player) nextPlayer = parsed.data.player;
+      setPlayer(nextPlayer);
+      notify.success("Player details updated successfully.", { duration: 5000 });
+      window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
+      router.refresh();
+    } finally {
+      setSaveBusy(false);
+    }
   }
 
   async function decideRegistration(status: "approved" | "rejected") {
@@ -159,14 +192,7 @@ export default function AdminPlayerDetailPage() {
         body: JSON.stringify({ status })
       });
       if (!r.ok) {
-        let msg = await r.text();
-        try {
-          const j = JSON.parse(msg) as { message?: string };
-          if (j.message) msg = j.message;
-        } catch {
-          /* keep text */
-        }
-        setErr(msg);
+        setErr(await readAdminApiError(r));
         return;
       }
       window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
@@ -180,7 +206,7 @@ export default function AdminPlayerDetailPage() {
     if (!confirm("Mark this player as withdrawn? History is retained.")) return;
     const r = await adminApiFetch(`/api/admin/players/${id}/withdraw`, { method: "POST" });
     if (!r.ok) {
-      setErr(await r.text());
+      setErr(await readAdminApiError(r));
       return;
     }
     window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
@@ -192,7 +218,7 @@ export default function AdminPlayerDetailPage() {
     fd.append("photo", file);
     const r = await adminApiFetch(`/api/admin/players/${id}/photo`, { method: "POST", body: fd });
     if (!r.ok) {
-      setErr(await r.text());
+      setErr(await readAdminApiError(r));
       return;
     }
     window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
@@ -206,7 +232,7 @@ export default function AdminPlayerDetailPage() {
       body: JSON.stringify({ playerId: id, notes: perfNotes, focusArea: perfFocus || undefined })
     });
     if (!r.ok) {
-      setErr(await r.text());
+      setErr(await readAdminApiError(r));
       return;
     }
     setPerfNotes("");
@@ -220,17 +246,25 @@ export default function AdminPlayerDetailPage() {
   const rs = player.registrationStatus;
 
   const isWithdrawn = player.status === "withdrawn";
+  const inDanger = !isWithdrawn && isPlayerInDanger(player);
+  const overdueDays = daysSinceSubscriptionEnded(player.subscriptionValidUntil);
 
   return (
     <div className="admin-profile-page">
-      <header className={clsx("admin-profile-hero card", isWithdrawn && "admin-profile-hero--withdrawn")}>
+      <header
+        className={clsx(
+          "admin-profile-hero card",
+          isWithdrawn && "admin-profile-hero--withdrawn",
+          inDanger && "admin-profile-hero--danger"
+        )}
+      >
         <div className="admin-profile-hero__top">
           <Link href="/admin/players" className="ks-text-link admin-quick-link">
             ← Roster
           </Link>
           <div className="admin-profile-hero__actions">
-            <button type="button" className="btn" onClick={() => void saveAll()} disabled={!parent}>
-              Save all changes
+            <button type="button" className="btn" onClick={() => void saveAll()} disabled={!parent || saveBusy}>
+              {saveBusy ? "Saving…" : "Save all changes"}
             </button>
           </div>
         </div>
@@ -295,6 +329,19 @@ export default function AdminPlayerDetailPage() {
               Marked withdrawn {player.withdrawnAt.slice(0, 10)}
             </time>
           ) : null}
+        </div>
+      ) : null}
+
+      {inDanger ? (
+        <div className="admin-danger-banner" role="alert">
+          <span className="admin-danger-banner__flag" aria-hidden>
+            ⚠
+          </span>
+          <strong>Danger — payment overdue</strong>
+          <span>
+            Subscription ended {overdueDays} day{overdueDays === 1 ? "" : "s"} ago. Contact the parent and
+            collect the renewal payment as soon as possible.
+          </span>
         </div>
       ) : null}
 
@@ -472,6 +519,34 @@ export default function AdminPlayerDetailPage() {
                 </select>
               </label>
               <label className="form-label">
+                <span>Roster status</span>
+                <select
+                  className="input-field"
+                  value={player.status}
+                  onChange={(e) => setPlayer({ ...player, status: e.target.value as PlayerStatus })}
+                >
+                  <option value="active">active</option>
+                  <option value="withdrawn">withdrawn</option>
+                </select>
+              </label>
+              <label className="form-label">
+                <span>Registration status</span>
+                <select
+                  className="input-field"
+                  value={player.registrationStatus}
+                  onChange={(e) =>
+                    setPlayer({
+                      ...player,
+                      registrationStatus: e.target.value as RegistrationStatus
+                    })
+                  }
+                >
+                  <option value="pending">pending</option>
+                  <option value="approved">approved</option>
+                  <option value="rejected">rejected</option>
+                </select>
+              </label>
+              <label className="form-label">
                 <span>Height (cm)</span>
                 <input
                   className="input-field"
@@ -631,8 +706,8 @@ export default function AdminPlayerDetailPage() {
           </section>
 
           <div className="admin-profile-footer-cta">
-            <button type="button" className="btn" onClick={() => void saveAll()} disabled={!parent}>
-              Save all changes
+            <button type="button" className="btn" onClick={() => void saveAll()} disabled={!parent || saveBusy}>
+              {saveBusy ? "Saving…" : "Save all changes"}
             </button>
             {player.status === "active" && player.registrationStatus === "approved" ? (
               <button type="button" className="btn btn-secondary" onClick={() => void withdraw()}>

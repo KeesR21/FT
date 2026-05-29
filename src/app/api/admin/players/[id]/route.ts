@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getAuthenticatedAdminActor } from "@/lib/admin-actor";
+import { recordActivity } from "@/lib/activity-log";
 import { db } from "@/lib/db";
 import { mergeRegistrationProfile } from "@/lib/registration-profile";
 import { requireAdmin } from "@/lib/require-admin";
@@ -34,8 +36,10 @@ const patchSchema = z.object({
   profilePhotoUrl: z.string().min(1).optional().nullable(),
   parentName: z.string().optional(),
   phoneNumber: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.union([z.string().email("Enter a valid parent email."), z.literal("")]).optional(),
   address: z.string().optional(),
+  status: z.enum(["active", "withdrawn"]).optional(),
+  registrationStatus: z.enum(["pending", "approved", "rejected"]).optional(),
   registrationProfile: registrationProfilePartialSchema
 });
 
@@ -57,6 +61,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  const adminActor = await getAuthenticatedAdminActor();
   const { id } = await params;
   let body: unknown;
   try {
@@ -72,10 +77,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const player = await db.getPlayer(id);
   if (!player) return NextResponse.json(jsonMessage("Not found"), { status: 404 });
 
+  const prevSnap = {
+    playerName: player.playerName,
+    status: player.status,
+    registrationStatus: player.registrationStatus,
+    subscriptionValidUntil: player.subscriptionValidUntil ?? null,
+    ageGroup: player.ageGroup,
+    parentEmail: (await db.getParentByPlayerId(id))?.email
+  };
+
   const parentPatch: Record<string, string> = {};
   if (data.parentName !== undefined) parentPatch.parentName = data.parentName;
   if (data.phoneNumber !== undefined) parentPatch.phoneNumber = data.phoneNumber;
-  if (data.email !== undefined) parentPatch.email = data.email;
+  if (data.email !== undefined && data.email !== "") parentPatch.email = data.email;
   if (data.address !== undefined) parentPatch.address = data.address;
   if (Object.keys(parentPatch).length) await db.updateParent(player.parentId, parentPatch);
 
@@ -93,6 +107,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       ? mergeRegistrationProfile(player.registrationProfile, data.registrationProfile)
       : undefined;
 
+  const withdrawnPatch: { withdrawnAt?: string | null } = {};
+  if (data.status !== undefined) {
+    if (data.status === "withdrawn" && player.status !== "withdrawn") {
+      withdrawnPatch.withdrawnAt = new Date().toISOString();
+    } else if (data.status === "active") {
+      withdrawnPatch.withdrawnAt = null;
+    }
+  }
+
   const updated = await db.updatePlayer(id, {
     ...(data.playerName && { playerName: data.playerName }),
     dateOfBirth: nextDob,
@@ -104,11 +127,34 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       subscriptionValidUntil: data.subscriptionValidUntil ?? undefined
     }),
     ...(data.profilePhotoUrl !== undefined && { profilePhotoUrl: data.profilePhotoUrl ?? undefined }),
+    ...(data.status !== undefined && { status: data.status }),
+    ...(data.registrationStatus !== undefined && { registrationStatus: data.registrationStatus }),
+    ...(Object.keys(withdrawnPatch).length > 0 && withdrawnPatch),
     ...(mergedProfile !== undefined && { registrationProfile: mergedProfile })
   });
+  if (!updated) return NextResponse.json(jsonMessage("Not found"), { status: 404 });
 
   revalidatePublicSite();
   revalidateAdminViews();
+
+  recordActivity(req, {
+    actorKind: "admin",
+    actorId: adminActor.id,
+    actorLabel: adminActor.label,
+    action: "player.update",
+    description: `Updated player roster record: ${updated.playerName}`,
+    resourceType: "player",
+    resourceId: id,
+    previousValue: prevSnap,
+    newValue: {
+      playerName: updated.playerName,
+      status: updated.status,
+      registrationStatus: updated.registrationStatus,
+      subscriptionValidUntil: updated.subscriptionValidUntil ?? null,
+      ageGroup: updated.ageGroup,
+      parentEmail: (await db.getParentByPlayerId(id))?.email
+    }
+  });
 
   return NextResponse.json({ player: updated });
 }

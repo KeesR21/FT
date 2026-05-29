@@ -43,7 +43,6 @@ export async function generateAuditReportPdf(result: AuditRunResult): Promise<Ui
   const pageW = 595.28;
   const pageH = 841.89;
   const margin = 50;
-  const lineH = 12;
   const maxW = 92;
 
   let page = pdf.addPage([pageW, pageH]);

@@ -9,7 +9,7 @@ export const CMS_PAGE_LINKS: { slug: string; label: string; publicPath: string }
   { slug: "events", label: "Events", publicPath: "/events" },
   { slug: "gallery", label: "Gallery", publicPath: "/gallery" },
   { slug: "contact", label: "Contact", publicPath: "/contact" },
-  { slug: "location", label: "Location", publicPath: "/locations" }
+  { slug: "location", label: "Pitch locations", publicPath: "/locations" }
 ];
 
 export function cmsAdminPath(slug: string) {

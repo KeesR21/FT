@@ -8,7 +8,8 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useCallback, useEffect, useRef, type ChangeEvent } from "react";
 import { resizeImageForUpload } from "../_lib/resize-image-for-upload";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, formatAdminApiMessage } from "@/lib/admin-api-fetch";
+import { usePortalAuthNotify } from "@/components/portal/portal-auth-notify";
 import { newsContentForEditor } from "@/lib/news-html";
 
 function ToolbarButton({
@@ -48,6 +49,7 @@ export function NewsRichEditor({
   disabled?: boolean;
   placeholder?: string;
 }) {
+  const notify = usePortalAuthNotify();
   const fileRef = useRef<HTMLInputElement>(null);
   const initial = newsContentForEditor(value);
 
@@ -120,15 +122,15 @@ export function NewsRichEditor({
         const r = await adminApiFetch("/api/admin/cms/upload", { method: "POST", body: fd });
         const data = (await r.json()) as { url?: string; message?: string };
         if (!r.ok || !data.url) {
-          window.alert(data.message ?? "Upload failed");
+          notify.error(formatAdminApiMessage(r.status, data.message ?? "Upload failed"), { status: r.status });
           return;
         }
         editor.chain().focus().setImage({ src: data.url, alt: file.name }).run();
       } catch {
-        window.alert("Could not insert image.");
+        notify.error("Could not insert image. Please try again.");
       }
     },
-    [editor]
+    [editor, notify]
   );
 
   if (!editor) {

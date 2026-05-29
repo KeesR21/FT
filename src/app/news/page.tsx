@@ -18,18 +18,30 @@ type Props = { searchParams: Promise<{ page?: string }> };
 export default async function NewsPage({ searchParams }: Props) {
   const sp = await searchParams;
   const c = await getCachedSiteContent();
-  const sorted = sortNewsPostsByPublishedDesc(c.newsPosts);
+  const visiblePosts = c.newsPosts.filter((p) => {
+    if ((p.status ?? "published") === "draft") return false;
+    if (p.publishedAt && Date.parse(p.publishedAt) > Date.now()) return false;
+    return true;
+  });
+  const sorted = sortNewsPostsByPublishedDesc(visiblePosts);
   const rawPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const { page, totalPages, layout } = paginateNewsPosts(sorted, rawPage);
 
   return (
     <div className="news-hub">
+      {/* Full-bleed hero — consistent with other landing pages */}
+      <section className="news-hub__hero schedule-landing-hero ks-full-bleed" aria-label="News hero">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/gallery/FTPR_49.JPG" alt="" className="schedule-landing-hero__bg" decoding="async" />
+        <div className="schedule-landing-hero__overlay" aria-hidden />
+        <div className="schedule-landing-hero__inner container">
+          <span className="schedule-landing-hero__pill">Blog &amp; News</span>
+          <h1 className="schedule-landing-hero__title">{c.newsPageTitle}</h1>
+          <p className="schedule-landing-hero__lead">{c.newsPageLead}</p>
+        </div>
+      </section>
+
       <div className="container page-y">
-        <header className="news-hub__masthead card page-hero-card">
-          <span className="k-pill">BLOG & NEWS</span>
-          <h1 className="page-h1">{c.newsPageTitle}</h1>
-          <p className="page-lead muted">{c.newsPageLead}</p>
-        </header>
 
         {sorted.length === 0 ? (
           <p className="news-hub__empty muted">No stories published yet. Check back soon.</p>

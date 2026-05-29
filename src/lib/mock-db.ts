@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { addDays, format, subDays } from "date-fns";
+import { addDays, addMinutes, format, setHours, setMinutes, subDays } from "date-fns";
 import type {
   AdminMessage,
   Parent,
@@ -21,6 +21,7 @@ import { normalizeEmail, normalizePhone } from "@/lib/payment-guards";
 import { emptyRegistrationProfile } from "@/lib/registration-profile";
 import { computePaymentStatus } from "@/lib/utils";
 import { isPendingRegistration } from "@/lib/player-roster";
+import { normalizeTimetableSession } from "@/lib/timetable-session";
 
 /**
  * In dev, Next may re-evaluate this module on navigation/HMR. Module-level `[]` would reset all data.
@@ -198,6 +199,42 @@ function ensureInvoiceDemoRows() {
   }
 }
 
+/** Stable IDs aligned with `public/uploads/kit-orders/orders.json` + local portal account email. */
+const PORTAL_LOCAL_KEES_PARENT_ID = "portal-local-parent-kees-ir";
+const PORTAL_LOCAL_KEES_PLAYER_ID = "df69a63a-2f07-48c3-a66d-dc656534ec3a";
+
+/**
+ * When `USE_MOCK_DB=true` and `MOCK_DB_SEED_DEMO` is unset, the in-memory DB starts empty —
+ * but kit orders / parent portal files still reference this player. Merge these rows so
+ * `findLinkedPlayersByEmail("keesr21@gmail.com")` resolves again (nothing was deleted from disk).
+ */
+function ensureKeesPortalLinkedRows() {
+  const now = new Date();
+  const par: Parent = {
+    id: PORTAL_LOCAL_KEES_PARENT_ID,
+    parentName: "Kees Ir",
+    phoneNumber: "+250788352160",
+    email: "keesr21@gmail.com",
+    address: ""
+  };
+  const pl: Player = {
+    id: PORTAL_LOCAL_KEES_PLAYER_ID,
+    playerName: "Kees Jr",
+    dateOfBirth: subDays(now, 7 * 365).toISOString().slice(0, 10),
+    ageGroup: "U9",
+    heightCm: 125,
+    weightKg: 24,
+    status: "active",
+    registrationStatus: "approved",
+    parentId: par.id,
+    developmentNotes: "Local mock row — keep in sync with kit order fixtures.",
+    subscriptionValidUntil: addDays(now, 45).toISOString(),
+    createdAt: subDays(now, 20).toISOString()
+  };
+  if (!parents.some((p) => p.id === par.id)) parents.push(par);
+  if (!players.some((p) => p.id === pl.id)) players.push(pl);
+}
+
 function seed() {
   if (_mock.seeded) return;
   const now = new Date();
@@ -364,58 +401,282 @@ function seed() {
   });
 
   sessions.push(
-    {
+    normalizeTimetableSession({
       id: "sess-1",
       title: "U9 Training",
       ageGroup: "U9",
+      ageGroups: ["U9"],
       kind: "training",
       startsAt: addDays(now, 1).toISOString(),
       endsAt: addDays(now, 1.08).toISOString(),
       locationName: "Main Academy Pitch",
       kitRequirements: "Blue kit, shin guards",
+      trainerName: "Coach Amara",
+      activities: ["Ball mastery", "Passing patterns", "Small-sided games"],
+      sessionObjectives: "First touch under pressure and quick combination play.",
+      equipmentNotes: "Cones, bibs, size 4 balls",
+      instructorNotes: "Parents: arrive 10 minutes early for briefing.",
       isUpdated: false,
       updatedAt: null
-    },
-    {
+    }),
+    normalizeTimetableSession({
       id: "sess-2",
       title: "U14A Training",
       ageGroup: "U14A",
+      ageGroups: ["U14A"],
       kind: "training",
       startsAt: addDays(now, 2).toISOString(),
       endsAt: addDays(now, 2.1).toISOString(),
       locationName: "Lion Arena",
       kitRequirements: "Full kit",
+      trainerName: "Coach Jean-Pierre",
+      activities: ["Pressing triggers", "Transition to attack"],
+      sessionObjectives: "Compact defending and fast counter-attacks.",
+      equipmentNotes: "Goals, ladders",
+      instructorNotes: "",
       isUpdated: true,
       updatedAt: subDays(now, 1).toISOString()
-    },
-    {
+    }),
+    normalizeTimetableSession({
       id: "sess-3",
       title: "U9 Match",
       ageGroup: "U9",
+      ageGroups: ["U9"],
       kind: "match",
       startsAt: addDays(now, 5).toISOString(),
       endsAt: addDays(now, 5.12).toISOString(),
       locationName: "Regional Stadium",
       kitRequirements: "Away strip",
+      trainerName: "Coach Amara",
+      activities: ["Match play"],
+      sessionObjectives: "Apply weekly themes in a competitive fixture.",
+      equipmentNotes: "",
+      instructorNotes: "Meet at south entrance.",
       isUpdated: false,
       updatedAt: null
-    }
+    })
   );
   _mock.seeded = true;
 }
 
-seed();
-ensureInvoiceDemoRows();
+/** June 2026, day-of-month (1 = Mon 1 Jun) → ISO start/end for schedule UI preview. */
+function june2026Slot(day: number, hour: number, minute: number, durationMinutes: number) {
+  const start = setMinutes(setHours(new Date(2026, 5, day), hour), minute);
+  const end = addMinutes(start, durationMinutes);
+  return { startsAt: start.toISOString(), endsAt: end.toISOString() };
+}
 
-export function resetMockDb() {
+/**
+ * Sample timetable for the first week of June 2026 (Mon 1 – Sun 7).
+ * Loaded whenever the in-memory mock DB is used so /schedule can be previewed without admin setup.
+ */
+function seedSchedulePreview() {
+  if (sessions.some((s) => s.id.startsWith("sess-june-"))) return;
+
+  sessions.push(
+    normalizeTimetableSession({
+      id: "sess-june-1",
+      title: "U7 Training",
+      ageGroup: "U7",
+      ageGroups: ["U7"],
+      kind: "training",
+      ...june2026Slot(1, 16, 0, 60),
+      locationName: "Main Academy Pitch",
+      kitRequirements: "Red kit, shin guards, water bottle",
+      trainerName: "Coach Léa",
+      activities: ["Coordination ladders", "1v1 dribbling", "Fun finishing games"],
+      sessionObjectives: "Close control and confidence on the ball in tight spaces.",
+      equipmentNotes: "Flat cones, pinnies, size 3 balls",
+      instructorNotes: "",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-2",
+      title: "U11 Training",
+      ageGroup: "U11",
+      ageGroups: ["U11"],
+      kind: "training",
+      ...june2026Slot(1, 17, 30, 90),
+      locationName: "Lion Arena",
+      kitRequirements: "Home kit, shin guards",
+      trainerName: "Coach Marcus",
+      activities: ["Rondo possession", "Wide overloads", "8v8 with conditions"],
+      sessionObjectives: "Switch play quickly and support wide attacks.",
+      equipmentNotes: "Bibs, mannequins, size 4 balls",
+      instructorNotes: "Pitch B if main pitch is wet.",
+      isUpdated: true,
+      updatedAt: new Date(2026, 4, 28, 10, 0, 0).toISOString()
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-3",
+      title: "U9 Training",
+      ageGroup: "U9",
+      ageGroups: ["U9"],
+      kind: "training",
+      ...june2026Slot(2, 16, 0, 90),
+      locationName: "Main Academy Pitch",
+      kitRequirements: "Blue kit, shin guards",
+      trainerName: "Coach Amara",
+      activities: ["Ball mastery circuit", "Passing patterns", "Small-sided games"],
+      sessionObjectives: "First touch away from pressure and quick combination play.",
+      equipmentNotes: "Cones, bibs, size 4 balls",
+      instructorNotes: "",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-4",
+      title: "U14A · U14B Training",
+      ageGroup: "U14A",
+      ageGroups: ["U14A", "U14B"],
+      kind: "training",
+      ...june2026Slot(3, 18, 0, 90),
+      locationName: "Lion Arena",
+      kitRequirements: "Full kit, long socks",
+      trainerName: "Coach Jean-Pierre",
+      activities: ["Pressing triggers", "Build-up patterns", "Phase of play — attack"],
+      sessionObjectives: "Compact shape when defending; fast vertical passes in transition.",
+      equipmentNotes: "Full-size goals, ladders, hurdles",
+      instructorNotes: "Joint session — squads split for finishing.",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-5",
+      title: "U16 Training",
+      ageGroup: "U16",
+      ageGroups: ["U16"],
+      kind: "training",
+      ...june2026Slot(4, 17, 0, 90),
+      locationName: "Training ground B",
+      kitRequirements: "Training top, shorts, boots",
+      trainerName: "Coach David",
+      activities: ["Set-piece routines", "Defensive unit shape", "Conditioned 11v11"],
+      sessionObjectives: "Organised defending from set plays and rest defence.",
+      equipmentNotes: "Corner flags, poles",
+      instructorNotes: "",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-6",
+      title: "U14B Match",
+      ageGroup: "U14B",
+      ageGroups: ["U14B"],
+      kind: "match",
+      ...june2026Slot(5, 15, 0, 100),
+      locationName: "Regional Stadium",
+      kitRequirements: "Away strip, white socks",
+      trainerName: "Coach Jean-Pierre",
+      activities: ["Warm-up", "Team talk", "Match play"],
+      sessionObjectives: "Apply weekly pressing themes in a competitive fixture.",
+      equipmentNotes: "",
+      instructorNotes: "Meet 45 minutes before kick-off at south entrance.",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-7",
+      title: "U9 Match",
+      ageGroup: "U9",
+      ageGroups: ["U9"],
+      kind: "match",
+      ...june2026Slot(6, 10, 0, 90),
+      locationName: "Main Academy Pitch",
+      kitRequirements: "Home kit, shin guards",
+      trainerName: "Coach Amara",
+      activities: ["Activation", "Match play"],
+      sessionObjectives: "Encourage positive play and respect for officials.",
+      equipmentNotes: "Match balls provided",
+      instructorNotes: "Parents: no coaching from the sideline.",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-8",
+      title: "U18 Training",
+      ageGroup: "U18",
+      ageGroups: ["U18"],
+      kind: "training",
+      ...june2026Slot(6, 14, 0, 120),
+      locationName: "Lion Arena",
+      kitRequirements: "Full kit",
+      trainerName: "Coach André",
+      activities: ["Video review (15 min)", "Position-specific blocks", "High-intensity small-sided"],
+      sessionObjectives: "Decision-making in the final third under fatigue.",
+      equipmentNotes: "GPS vests, heart-rate monitors",
+      instructorNotes: "Senior squad — late finish expected.",
+      isUpdated: false,
+      updatedAt: null
+    }),
+    normalizeTimetableSession({
+      id: "sess-june-9",
+      title: "U11 Training",
+      ageGroup: "U11",
+      ageGroups: ["U11"],
+      kind: "training",
+      ...june2026Slot(7, 9, 0, 75),
+      locationName: "Indoor hall",
+      kitRequirements: "Indoor shoes, shin guards",
+      trainerName: "Coach Marcus",
+      activities: ["Futsal principles", "Quick passing", "Rotating 4v4"],
+      sessionObjectives: "Tight control and scanning in a smaller space.",
+      equipmentNotes: "Futsal balls, rebound boards",
+      instructorNotes: "Sunday recovery session — optional for trialists.",
+      isUpdated: false,
+      updatedAt: null
+    })
+  );
+}
+
+/**
+ * Demo data (Eric, David, the invoice-demo parents/players, etc.) used to be created on
+ * every server start. That was useful early on but kept re-injecting inconsistent test
+ * rows (e.g. David Ndayisaba with a 45-day-future subscription + a stale "Monthly fee — April"
+ * invoice). To start with a truly clean slate set `MOCK_DB_SEED_DEMO=1` in `.env.local`,
+ * otherwise the in-memory DB starts empty.
+ */
+if (process.env.MOCK_DB_SEED_DEMO === "1") {
+  seed();
+  ensureInvoiceDemoRows();
+} else {
+  _mock.seeded = true;
+}
+
+seedSchedulePreview();
+
+/**
+ * Wipe every entity managed by the in-memory mock DB.
+ *
+ * - `reseed: true` (default) → restore the demo dataset (matches old behaviour).
+ * - `reseed: false` → leave everything empty (used by the admin "wipe players" action so
+ *   the dashboard truly starts blank for testing).
+ *
+ * `keep` lets callers preserve specific subsystems (timetable sessions in particular —
+ * they’re not player-scoped and clearing them would also blow away the schedule UI).
+ */
+export function resetMockDb(opts?: {
+  reseed?: boolean;
+  keep?: { sessions?: boolean };
+}) {
+  const reseed = opts?.reseed ?? true;
+  const keepSessions = Boolean(opts?.keep?.sessions);
   parents.splice(0, parents.length);
   players.splice(0, players.length);
   payments.splice(0, payments.length);
-  sessions.splice(0, sessions.length);
+  if (!keepSessions) sessions.splice(0, sessions.length);
   performanceEntries.splice(0, performanceEntries.length);
   messages.splice(0, messages.length);
   _mock.seeded = false;
-  seed();
+  if (reseed) {
+    seed();
+    ensureInvoiceDemoRows();
+    ensureKeesPortalLinkedRows();
+  } else {
+    _mock.seeded = true;
+  }
+  seedSchedulePreview();
 }
 
 export const db = {
@@ -596,6 +857,9 @@ export const db = {
   verifyPayment(id: string, verifiedBy: string, extras?: VerifyPaymentExtras) {
     const payment = payments.find((p) => p.id === id);
     if (!payment) return null;
+    if (payment.status === "paid" && payment.paidAt) {
+      return { ...payment };
+    }
     payment.paidAt = new Date().toISOString();
     payment.status = "paid";
     payment.verifiedBy = verifiedBy;
@@ -608,7 +872,8 @@ export const db = {
   },
 
   listSessions(ageGroup?: string) {
-    return ageGroup ? sessions.filter((s) => s.ageGroup === ageGroup) : [...sessions];
+    if (!ageGroup) return [...sessions];
+    return sessions.filter((s) => s.ageGroup === ageGroup || s.ageGroups.includes(ageGroup));
   },
 
   getSession(id: string) {
@@ -616,7 +881,7 @@ export const db = {
   },
 
   createSession(input: Omit<TimetableSession, "id">) {
-    const session = { ...input, id: randomUUID() };
+    const session = normalizeTimetableSession({ ...input, id: randomUUID() });
     sessions.push(session);
     return session;
   },

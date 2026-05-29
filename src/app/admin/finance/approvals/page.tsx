@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
-import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
+import { ADMIN_OVERVIEW_REFRESH, type AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
 import { formatAcademyMoney, formatShortDate, paymentCategoryLabel } from "@/lib/finance-format";
 import { buildAdminPaymentRowModel } from "@/lib/admin-payment-ui";
+import { SystemNotice } from "@/components/system/system-notice";
 import type { SubscriptionUiStatus } from "@/lib/types";
 
 type Row = {
@@ -17,6 +18,7 @@ type Row = {
   parentEmail: string;
   ageGroup: string;
   paymentFor: string;
+  paymentCategory: "registration" | "membership" | "other";
   amount: number;
   currency: string;
   dueDate: string;
@@ -24,9 +26,32 @@ type Row = {
   uiStatusLabel: string;
   subscriptionValidUntil?: string | null;
   subscriptionUiStatus?: SubscriptionUiStatus;
+  projectedSubscriptionStartsAt?: string | null;
+  projectedSubscriptionEndsAt?: string | null;
+  playerDanger?: boolean;
+  playerOverdueDays?: number;
 };
 
-type ApprovalsTab = "all" | "unpaid" | "pending" | "overdue" | "expired_sub";
+type ApprovalsTab = "all" | "application" | "monthly" | "unpaid" | "pending" | "overdue" | "danger";
+
+function paymentTypeLabel(category: Row["paymentCategory"]): string {
+  if (category === "registration") return "Application Fee";
+  if (category === "membership") return "Monthly Membership";
+  return "Other";
+}
+
+function paymentTypeBadgeClass(category: Row["paymentCategory"]): string {
+  if (category === "registration") return "app-pay-type-pill app-pay-type-pill--application";
+  if (category === "membership") return "app-pay-type-pill app-pay-type-pill--monthly";
+  return "app-pay-type-pill app-pay-type-pill--other";
+}
+
+function monthYearLabel(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
 
 export default function FinanceApprovalsPage() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -35,14 +60,15 @@ export default function FinanceApprovalsPage() {
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [tab, setTab] = useState<ApprovalsTab>("all");
+  const inFlightRef = useRef<Set<string>>(new Set());
 
-  const load = useCallback(async (opts?: { quiet?: boolean }) => {
-    const quiet = Boolean(opts?.quiet);
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const quiet = Boolean(detail?.silent);
     if (!quiet) setLoading(true);
     setErr("");
     try {
       const r = await adminApiFetch("/api/admin/payments?pageSize=0");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const data = await r.json();
       const open = (data.payments ?? []).filter(
         (p: Row) => p.uiStatus === "unpaid" || p.uiStatus === "pending" || p.uiStatus === "overdue"
@@ -63,41 +89,73 @@ export default function FinanceApprovalsPage() {
 
   const filtered = useMemo(() => {
     if (tab === "all") return rows;
-    if (tab === "expired_sub") return rows.filter((r) => r.subscriptionUiStatus === "expired");
+    if (tab === "application") return rows.filter((r) => r.paymentCategory === "registration");
+    if (tab === "monthly") return rows.filter((r) => r.paymentCategory === "membership");
+    if (tab === "danger") return rows.filter((r) => r.playerDanger);
     return rows.filter((r) => r.uiStatus === tab);
   }, [rows, tab]);
 
   const counts = useMemo(() => {
-    const c = { all: rows.length, unpaid: 0, pending: 0, overdue: 0, expired_sub: 0 };
+    const c = {
+      all: rows.length,
+      application: 0,
+      monthly: 0,
+      unpaid: 0,
+      pending: 0,
+      overdue: 0,
+      danger: 0
+    };
     for (const r of rows) {
+      if (r.paymentCategory === "registration") c.application += 1;
+      if (r.paymentCategory === "membership") c.monthly += 1;
       if (r.uiStatus === "unpaid") c.unpaid += 1;
       if (r.uiStatus === "pending") c.pending += 1;
       if (r.uiStatus === "overdue") c.overdue += 1;
-      if (r.subscriptionUiStatus === "expired") c.expired_sub += 1;
+      if (r.playerDanger) c.danger += 1;
     }
     return c;
   }, [rows]);
 
-  async function patchPayment(id: string, action: "confirm" | "send_invoice") {
+  async function patchPayment(id: string, action: "confirm" | "send_invoice" | "void") {
+    if (inFlightRef.current.has(id)) return;
+    let voidReason: string | undefined;
+    if (action === "void") {
+      const reason = window.prompt(
+        "Reason for voiding this invoice (3+ characters). Voiding releases the player so a new monthly invoice can be issued."
+      );
+      if (!reason || reason.trim().length < 3) {
+        setErr("Void cancelled — a reason of at least 3 characters is required.");
+        return;
+      }
+      voidReason = reason.trim();
+    }
+    inFlightRef.current.add(id);
     setBusyId(id);
     setNotice("");
+    setErr("");
     try {
       const r = await adminApiFetch(`/api/admin/payments/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action })
+        body: JSON.stringify(voidReason ? { action, voidReason } : { action })
       });
-      if (!r.ok) throw new Error(await r.text());
-      if (action === "confirm") {
-        setNotice("Payment approved successfully.");
-      } else {
-        setNotice("Reminder sent. Email delivers when mail is configured.");
-      }
+      if (!r.ok) throw new Error(await readAdminApiError(r));
+      const json = await r.json();
+      const baseMessage =
+        json && typeof json.message === "string" && json.message
+          ? json.message
+          : action === "confirm"
+            ? "Payment approved successfully."
+            : action === "void"
+              ? "Invoice voided."
+              : "Reminder sent.";
+      setNotice(baseMessage);
       window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
-      await load({ quiet: true });
+      await load({ silent: true });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed");
     } finally {
+      inFlightRef.current.delete(id);
       setBusyId(null);
     }
   }
@@ -106,10 +164,12 @@ export default function FinanceApprovalsPage() {
     <section className="page-stack finance-page-stack">
       <header className="card finance-hero">
         <span className="k-pill">FINANCE</span>
-        <h1 className="page-h1">Approvals</h1>
+        <h1 className="page-h1">Pending Approvals</h1>
         <p className="page-lead muted">
-          Open invoices that still need confirmation. Approving records cash received and may trigger parent emails and
-          roster updates (e.g. registration fee). Expired memberships stay in this queue until payment is approved.
+          Open invoices that still need confirmation. Application fees and monthly membership fees are listed
+          separately so the next action is unambiguous. Approving a registration fee marks it paid only — admit
+          the player from <Link href="/admin/applications" className="ks-text-link">Applications</Link> to start
+          the monthly membership.
         </p>
         <Link href="/admin/finance/transactions" className="ks-text-link">
           ← Full ledger
@@ -121,10 +181,12 @@ export default function FinanceApprovalsPage() {
           {(
             [
               ["all", "All open"],
+              ["application", "Application Fee"],
+              ["monthly", "Monthly Membership"],
               ["unpaid", "Unpaid"],
               ["pending", "Pending review"],
               ["overdue", "Overdue"],
-              ["expired_sub", "Expired membership"]
+              ["danger", "Danger (>5d late)"]
             ] as const
           ).map(([key, label]) => (
             <button
@@ -136,14 +198,22 @@ export default function FinanceApprovalsPage() {
               onClick={() => setTab(key)}
             >
               {label}
-              {key === "all" ? ` (${counts.all})` : ` (${counts[key]})`}
+              {` (${counts[key]})`}
             </button>
           ))}
         </div>
       </div>
 
-      {notice ? <p className="finance-toast finance-toast--ok">{notice}</p> : null}
-      {err ? <p className="form-message">{err}</p> : null}
+      {notice ? (
+        <SystemNotice variant="success" title="Done">
+          {notice}
+        </SystemNotice>
+      ) : null}
+      {err ? (
+        <SystemNotice variant="error" title="Action failed">
+          {err}
+        </SystemNotice>
+      ) : null}
       {loading ? <div className="finance-skeleton finance-skeleton--table" aria-busy /> : null}
 
       {!loading && filtered.length === 0 ? <p className="muted card">Nothing waiting in this queue.</p> : null}
@@ -157,9 +227,10 @@ export default function FinanceApprovalsPage() {
                   <th>Due</th>
                   <th>Player</th>
                   <th>Parent</th>
-                  <th>Invoice</th>
-                  <th>Subscription ends</th>
                   <th>Type</th>
+                  <th>Subscription month</th>
+                  <th>Start</th>
+                  <th>End</th>
                   <th>Amount</th>
                   <th>Status</th>
                   <th />
@@ -171,14 +242,39 @@ export default function FinanceApprovalsPage() {
                     uiStatus: row.uiStatus,
                     subscriptionUiStatus: row.subscriptionUiStatus
                   });
-                  const trClass = [model.rowHighlightClass].filter(Boolean).join(" ");
+                  const startsAt =
+                    row.paymentCategory === "membership"
+                      ? row.projectedSubscriptionStartsAt ?? row.dueDate
+                      : null;
+                  const endsAt =
+                    row.paymentCategory === "membership"
+                      ? row.projectedSubscriptionEndsAt ?? row.subscriptionValidUntil ?? null
+                      : null;
+                  const monthLabel =
+                    row.paymentCategory === "membership"
+                      ? monthYearLabel(startsAt ?? row.dueDate)
+                      : "—";
+                  const trClasses = [model.rowHighlightClass, row.playerDanger ? "admin-pay-row--danger" : ""]
+                    .filter(Boolean)
+                    .join(" ");
+                  const isBusy = busyId === row.id;
                   return (
-                    <tr key={row.id} className={trClass || undefined}>
+                    <tr key={row.id} className={trClasses || undefined}>
                       <td>{formatShortDate(row.dueDate)}</td>
                       <td>
-                        <Link href={`/admin/players/${row.playerId}`} className="ks-text-link">
-                          {row.playerName}
-                        </Link>
+                        <div className="admin-table-cell-player">
+                          <Link href={`/admin/players/${row.playerId}`} className="ks-text-link">
+                            {row.playerName}
+                          </Link>
+                          {row.playerDanger ? (
+                            <span
+                              className="admin-danger-flag"
+                              title={`Subscription ended ${row.playerOverdueDays ?? 0} days ago`}
+                            >
+                              DANGER
+                            </span>
+                          ) : null}
+                        </div>
                         <div className="muted admin-cell-muted">{row.ageGroup}</div>
                       </td>
                       <td>
@@ -186,11 +282,17 @@ export default function FinanceApprovalsPage() {
                         <br />
                         <span className="muted admin-cell-muted">{row.parentEmail}</span>
                       </td>
-                      <td>{row.paymentFor}</td>
-                      <td>{row.subscriptionValidUntil ? formatShortDate(row.subscriptionValidUntil) : "—"}</td>
                       <td>
-                        <span className="finance-pill">{paymentCategoryLabel(row.paymentFor)}</span>
+                        <span className={paymentTypeBadgeClass(row.paymentCategory)}>
+                          {paymentTypeLabel(row.paymentCategory)}
+                        </span>
+                        <div className="muted admin-cell-muted" style={{ marginTop: "0.25rem" }}>
+                          {paymentCategoryLabel(row.paymentFor)}
+                        </div>
                       </td>
+                      <td>{monthLabel}</td>
+                      <td>{startsAt ? formatShortDate(startsAt) : "—"}</td>
+                      <td>{endsAt ? formatShortDate(endsAt) : "—"}</td>
                       <td className="finance-num">{formatAcademyMoney(row.amount, row.currency)}</td>
                       <td>
                         <div className="admin-pay-badge-stack">
@@ -204,20 +306,32 @@ export default function FinanceApprovalsPage() {
                             <button
                               type="button"
                               className="btn admin-btn-sm"
-                              disabled={busyId === row.id}
+                              disabled={isBusy}
+                              aria-busy={isBusy || undefined}
                               title={model.approveTooltip}
                               onClick={() => void patchPayment(row.id, "confirm")}
                             >
-                              Approve payment
+                              {isBusy ? "Approving…" : "Approve payment"}
                             </button>
                             <button
                               type="button"
                               className="btn btn-secondary admin-btn-sm"
-                              disabled={busyId === row.id}
+                              disabled={isBusy}
+                              aria-busy={isBusy || undefined}
                               title={model.reminderTooltip}
                               onClick={() => void patchPayment(row.id, "send_invoice")}
                             >
                               Send reminder
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary admin-btn-sm finance-void-btn"
+                              disabled={isBusy}
+                              aria-busy={isBusy || undefined}
+                              title="Void this invoice (releases the player to receive a new monthly invoice). Use when the row is stale or duplicated."
+                              onClick={() => void patchPayment(row.id, "void")}
+                            >
+                              Void
                             </button>
                           </div>
                         ) : (

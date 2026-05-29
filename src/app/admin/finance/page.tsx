@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import type { AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import { FinanceMetricCard } from "@/components/admin/finance/finance-metric-card";
 import { formatAcademyMoney, formatShortDate, paymentCategoryLabel } from "@/lib/finance-format";
@@ -54,21 +55,24 @@ export default function FinanceOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErr("");
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setErr("");
+    }
     try {
       const r = await adminApiFetch("/api/admin/payments?metricsOnly=1");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const d = await r.json();
       setMetrics(d.metrics);
       setMonthly(d.monthly ?? []);
       setRecent(d.recentTransactions ?? []);
       setAlerts(d.alerts ?? null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to load");
+      if (!silent) setErr(e instanceof Error ? e.message : "Failed to load");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 

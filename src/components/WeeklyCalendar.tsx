@@ -6,7 +6,7 @@ import {
   type WeekdayName,
   type WeekScheduleByDay,
   type WeeklyCalendarEvent
-} from "@/lib/weekly-schedule";
+} from "@/lib/legacy-weekly-schedule";
 
 export { WEEKDAY_ORDER };
 export type { WeekdayName, WeekScheduleByDay, WeeklyCalendarEvent };

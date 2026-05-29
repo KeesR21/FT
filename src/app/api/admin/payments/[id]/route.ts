@@ -1,27 +1,25 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { computeMonthlyMembershipWindow } from "@/lib/membership-billing";
 import {
-  getMonthlyMembershipWindow,
   isMembershipFee,
   isRegistrationFee,
   sendInvoiceIssuedEmail,
   sendOverduePaymentEmail,
-  sendPaymentApprovedEmail,
-  sendRegistrationDecisionEmail
+  sendPaymentApprovedEmail
 } from "@/lib/notifications";
-import { isDuplicateOpenInvoice, monthlyFeePaymentFor } from "@/lib/payment-guards";
-import { getMonthlyFeeForGroup, loadPricing } from "@/lib/pricing-store";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { jsonMessage } from "@/lib/utils";
 
 const patchSchema = z.object({
-  action: z.enum(["confirm", "mark_pending", "mark_overdue", "send_invoice"]),
+  action: z.enum(["confirm", "mark_pending", "mark_overdue", "send_invoice", "void"]),
   paymentMethod: z.enum(["cash", "mobile_money", "bank_transfer", "card", "other"]).optional(),
   paymentNotes: z.string().optional(),
   mobileMoneyRef: z.string().optional(),
-  dueDate: z.string().optional()
+  dueDate: z.string().optional(),
+  voidReason: z.string().trim().min(3).max(280).optional()
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -42,6 +40,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const parent = await db.getParentByPlayerId(player.id);
 
   if (parsed.data.action === "mark_pending") {
+    if (payment.status === "paid") {
+      return NextResponse.json(jsonMessage("Payment is already paid — cannot move back to pending review."), {
+        status: 409
+      });
+    }
     const next = await db.updatePayment(id, {
       status: "pending",
       paymentMethod: parsed.data.paymentMethod,
@@ -60,6 +63,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   if (parsed.data.action === "mark_overdue") {
+    if (payment.status === "paid") {
+      return NextResponse.json(jsonMessage("Payment is already paid — cannot mark overdue."), { status: 409 });
+    }
     const next = await db.updatePayment(id, {
       status: "overdue",
       dueDate: parsed.data.dueDate ?? payment.dueDate
@@ -86,9 +92,42 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ message: "Payment marked overdue", payment: next });
   }
 
-  if (parsed.data.action === "send_invoice") {
+  if (parsed.data.action === "void") {
+    if (payment.status === "paid") {
+      return NextResponse.json(
+        jsonMessage("Cannot void a paid invoice. Use a refund/adjustment workflow instead."),
+        { status: 409 }
+      );
+    }
+    const reason = parsed.data.voidReason?.trim() || "Voided by admin (no reason provided).";
+    const stamp = new Date().toISOString();
     const next = await db.updatePayment(id, {
-      dueDate: new Date().toISOString(),
+      status: "overdue",
+      paymentNotes: `[VOIDED ${stamp.slice(0, 10)}] ${reason}\n${payment.paymentNotes ?? ""}`.trim(),
+      dueDate: payment.dueDate
+    });
+    await db.addMessage({
+      channel: "individual",
+      playerId: player.id,
+      subject: `Invoice voided: ${payment.paymentFor}`,
+      body: reason,
+      sentBy: "Finance admin"
+    });
+    revalidateAdminViews();
+    return NextResponse.json({
+      message: "Invoice voided. It will no longer block new monthly invoices for this player.",
+      payment: next
+    });
+  }
+
+  if (parsed.data.action === "send_invoice") {
+    if (payment.status === "paid") {
+      return NextResponse.json(
+        jsonMessage("This invoice is already paid — no reminder needed."),
+        { status: 409 }
+      );
+    }
+    const next = await db.updatePayment(id, {
       invoiceSentAt: new Date().toISOString()
     });
     if (parent?.email) {
@@ -99,21 +138,33 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         group: player.ageGroup,
         amount: payment.amount,
         currency: payment.currency,
-        dueDate: next?.dueDate ?? payment.dueDate,
+        dueDate: payment.dueDate,
         description: payment.paymentFor
       });
       await db.addMessage({
         channel: "individual",
         playerId: player.id,
-        subject: `Invoice issued: ${payment.paymentFor}`,
-        body: `Amount ${payment.amount.toLocaleString()} ${payment.currency}, due ${(next?.dueDate ?? payment.dueDate).slice(0, 10)}.`,
+        subject: `Invoice reminder: ${payment.paymentFor}`,
+        body: `Reminder for ${payment.amount.toLocaleString()} ${payment.currency}, original due ${payment.dueDate.slice(0, 10)}.`,
         sentBy: "Finance admin"
       });
     }
     revalidateAdminViews();
-    return NextResponse.json({ message: "Invoice sent", payment: next });
+    return NextResponse.json({ message: "Reminder sent", payment: next });
   }
 
+  if (payment.status === "paid") {
+    return NextResponse.json({
+      message: "Payment was already approved — no changes were made.",
+      payment,
+      idempotent: true
+    });
+  }
+
+  const isRegFee = isRegistrationFee(payment.paymentFor);
+  const isMonthlyMembership = isMembershipFee(payment.paymentFor);
+
+  const priorValidUntil = isMonthlyMembership ? player.subscriptionValidUntil ?? null : null;
   const verifiedBy = process.env.ADMIN_EMAIL ?? "admin@ftprlions.com";
   const verified = await db.verifyPayment(id, verifiedBy, {
     paymentMethod: parsed.data.paymentMethod,
@@ -121,45 +172,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     mobileMoneyRef: parsed.data.mobileMoneyRef
   });
   if (!verified) return NextResponse.json(jsonMessage("Payment not found"), { status: 404 });
-  const isRegFee = isRegistrationFee(verified.paymentFor);
-  const isMonthlyMembership = isMembershipFee(verified.paymentFor);
+
   let membership: { startsAt: string; endsAt: string } | null = null;
   if (isMonthlyMembership) {
-    membership = getMonthlyMembershipWindow(verified.paidAt ?? new Date().toISOString());
+    membership = computeMonthlyMembershipWindow({
+      paidAt: verified.paidAt ?? new Date().toISOString(),
+      priorValidUntil
+    });
     await db.updatePlayer(player.id, { subscriptionValidUntil: membership.endsAt });
   }
-  if (isRegFee && player.registrationStatus !== "approved") {
-    await db.updateRegistrationStatus(player.id, "approved");
-  }
-  if (isRegFee) {
-    const pricing = await loadPricing();
-    const fee = getMonthlyFeeForGroup(pricing, player.ageGroup);
-    const dueDate = new Date().toISOString();
-    const paymentFor = monthlyFeePaymentFor(dueDate);
-    const existing = await db.listPaymentsForPlayer(player.id);
-    if (!isDuplicateOpenInvoice(existing, { paymentFor, dueDate })) {
-      const monthlyInvoice = await db.createPayment({
-        playerId: player.id,
-        amount: fee.amount,
-        currency: fee.currency,
-        paymentFor,
-        dueDate,
-        invoiceSentAt: new Date().toISOString()
-      });
-      if (parent?.email) {
-        await sendInvoiceIssuedEmail({
-          email: parent.email,
-          parentName: parent.parentName,
-          playerName: player.playerName,
-          group: player.ageGroup,
-          amount: monthlyInvoice.amount,
-          currency: monthlyInvoice.currency,
-          dueDate: monthlyInvoice.dueDate,
-          description: monthlyInvoice.paymentFor
-        });
-      }
-    }
-  }
+
   if (parent?.email && isMonthlyMembership && membership) {
     await sendPaymentApprovedEmail({
       email: parent.email,
@@ -172,9 +194,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       membershipEndsAt: membership.endsAt
     });
   }
-  if (parent?.email && isRegFee) {
-    await sendRegistrationDecisionEmail(parent.email, player.playerName, true, player.ageGroup);
-  }
+
   await db.addMessage({
     channel: "individual",
     playerId: player.id,
@@ -183,7 +203,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       : isRegFee
         ? `Registration payment confirmed: ${verified.paymentFor}`
         : `Payment confirmed: ${verified.paymentFor}`,
-    body: `Confirmed by ${verifiedBy} on ${(verified.paidAt ?? new Date().toISOString()).slice(0, 10)}.`,
+    body: isRegFee
+      ? `Confirmed by ${verifiedBy} on ${(verified.paidAt ?? new Date().toISOString()).slice(0, 10)}. Player is now waiting for admin admission.`
+      : `Confirmed by ${verifiedBy} on ${(verified.paidAt ?? new Date().toISOString()).slice(0, 10)}.`,
     sentBy: "Finance admin"
   });
   revalidateAdminViews();
@@ -192,7 +214,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     message: isMonthlyMembership
       ? "Monthly fee payment approved"
       : isRegFee
-        ? "Registration payment confirmed and player admitted"
+        ? "Registration payment confirmed. Open Applications to admit the player."
         : "Payment confirmed",
     payment: paymentOut,
     membership

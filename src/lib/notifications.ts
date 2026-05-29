@@ -1,7 +1,10 @@
-import { addDays, differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
+import { differenceInCalendarDays, format, isValid, parseISO } from "date-fns";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { MEMBERSHIP_REMINDER_DAYS_LEFT } from "@/lib/membership-billing";
+import {
+  computeMonthlyMembershipWindow,
+  MEMBERSHIP_REMINDER_DAYS_LEFT
+} from "@/lib/membership-billing";
 import { subscriptionStatusFromDate } from "@/lib/subscription-ui";
 import { paymentStatusLabel } from "@/lib/utils";
 
@@ -195,15 +198,24 @@ export async function sendOverduePaymentEmail(input: {
   );
 }
 
-export function getMonthlyMembershipWindow(fromIso: string): { startsAt: string; endsAt: string } {
-  const start = (() => {
-    const d = parseISO(fromIso);
-    return isValid(d) ? d : new Date();
-  })();
-  return {
-    startsAt: start.toISOString(),
-    endsAt: addDays(start, 30).toISOString()
-  };
+/**
+ * Compute the membership window granted by a payment.
+ *
+ * Accepts EITHER a plain ISO string (legacy callers) OR an object with `paidAt` and the
+ * player's prior `subscriptionValidUntil`. When a prior end date is provided, the new
+ * window starts from that prior end (no gap, no overlap) — required for late renewals
+ * per spec ("subscription ends May 1, paid May 8 → new window May 1 → June 1").
+ */
+export function getMonthlyMembershipWindow(
+  fromIsoOrInput: string | { paidAt: string; priorValidUntil?: string | null }
+): { startsAt: string; endsAt: string } {
+  if (typeof fromIsoOrInput === "string") {
+    return computeMonthlyMembershipWindow({ paidAt: fromIsoOrInput });
+  }
+  return computeMonthlyMembershipWindow({
+    paidAt: fromIsoOrInput.paidAt,
+    priorValidUntil: fromIsoOrInput.priorValidUntil ?? null
+  });
 }
 
 export async function hasActivePaidMembership(playerId: string, validUntil?: string) {

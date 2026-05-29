@@ -1,0 +1,26 @@
+[
+  {
+    "id": "fc499a70-706e-49d0-b0a9-cd21e0d35f12",
+    "email": "keesr21@gmail.com",
+    "emailLower": "keesr21@gmail.com",
+    "fullName": "Kees Ir",
+    "passwordHash": "scrypt$e1c47c3a16b2144b4904bbca2534604e$3ba639830d5cd1d9416596054401da0d1da0b991566b435302d540ece0beffa4ab790f7d0c6a2e96e95d9d4cdb34bdde39b22539b399c0793b01690348bdb9a0",
+    "createdAt": "2026-05-17T10:02:58.613Z",
+    "updatedAt": "2026-05-17T10:04:18.053Z",
+    "sessionToken": "2aaad4a3488dbe88e2f52fe0eee9dfab1badbf7ce230f0e4dbb179f7dfb2a547",
+    "lastLoginAt": "2026-05-17T10:03:20.700Z",
+    "sessionLastActivityAt": "2026-05-17T10:04:18.049Z"
+  },
+  {
+    "id": "d4cd4873-d5c7-4f1b-8808-8d1a08c53116",
+    "email": "alain@gmail.com",
+    "emailLower": "alain@gmail.com",
+    "fullName": "Alain Mbabazi",
+    "passwordHash": "scrypt$3a15008265a430070e9624d8733c0d13$7d4c3289a5321d0426e64b43bc0ebe1efe1719c1da3a7d379cf72af6f01dd863b3abef67dcc3af3da2db25239ad1f940ccac7ad55bac17d6ce351dcac5d54665",
+    "createdAt": "2026-05-17T18:43:15.740Z",
+    "updatedAt": "2026-05-17T18:44:38.416Z",
+    "sessionToken": "ce3481dd6b29bcecdd85c1583e0b8d51ccd8cb0a7cf8c3585ffd2be0c5b78868",
+    "lastLoginAt": "2026-05-17T18:43:42.600Z",
+    "sessionLastActivityAt": "2026-05-17T18:44:38.397Z"
+  }
+]

@@ -1,79 +1,70 @@
 {
   "defaultMonthlyFee": {
-    "amount": 50000,
+    "amount": 45000,
     "currency": "RWF",
-    "updatedAt": "2026-05-01T12:53:50.932Z",
-    "updatedBy": "admin@ftprlions.com"
+    "updatedAt": "2026-05-05T03:23:31.494Z",
+    "updatedBy": "system"
   },
   "groupFees": [
     {
       "group": "U7",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     },
     {
       "group": "U9",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     },
     {
       "group": "U11",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     },
     {
       "group": "U14A",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     },
     {
       "group": "U14B",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     },
     {
       "group": "U16",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     },
     {
       "group": "U18",
       "amount": 45000,
       "currency": "RWF",
-      "updatedAt": "2026-05-01T12:53:24.712Z",
+      "updatedAt": "2026-05-05T03:23:31.494Z",
       "updatedBy": "system"
     }
   ],
   "registrationFees": [
     {
-      "id": "c61984af-1a94-444d-a1e9-126faf3c6db9",
-      "amount": 100000,
-      "currency": "RWF",
-      "effectiveFrom": "2026-05-01T00:00:00.000Z",
-      "createdAt": "2026-05-01T12:54:58.439Z",
-      "createdBy": "admin@ftprlions.com",
-      "note": "Registration fee including (Kit)"
-    },
-    {
-      "id": "07c24d97-6a7b-4af4-9df1-3f86a69a77af",
+      "id": "ed97a308-7f1a-4894-a912-b480d9d74fa0",
       "amount": 20000,
       "currency": "RWF",
-      "effectiveFrom": "2026-05-01T12:53:24.712Z",
-      "createdAt": "2026-05-01T12:53:24.712Z",
+      "effectiveFrom": "2026-05-05T03:23:31.494Z",
+      "createdAt": "2026-05-05T03:23:31.494Z",
       "createdBy": "system",
-      "note": "Initial registration fee (from environment)."
+      "note": "Initial registration fee (from environment / clean script)."
     }
   ]
 }

@@ -32,7 +32,7 @@ export function buildDefaultSiteContent(): SiteContent {
   homeCoachTitle: "Professional Coach",
   homeCoachBody: "Structured coaching pathways, clear feedback, and development plans for every age group.",
   homeEliteTitle: "Elite Training",
-  homeEliteBody: "Technical drills, match intelligence, and conditioning aligned with modern football standards.",
+  homeEliteBody: "Inspired by Greatness",
   homeMatchTitle: "Match performance",
   homeMatchDescription: "Weekly fixtures and competitive exposure by age group.",
   homeTimetableTitle: "Structured timetable",
@@ -311,7 +311,7 @@ export function buildDefaultSiteContent(): SiteContent {
       ]
     }
   ],
-  locationPageTitle: "Pitch Locations",
+  locationPageTitle: "Pitch locations",
   locationPageLead:
     "Choose a pitch to see the address and map. Pins show every site — click the list or a pin to focus.",
   locationMapEmbedUrl: "https://www.google.com/maps?q=Accra%20Sports%20Stadium&output=embed",

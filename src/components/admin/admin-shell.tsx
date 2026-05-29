@@ -3,18 +3,22 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PortalAuthNotifyProvider } from "@/components/portal/portal-auth-notify";
 import { useEffect, useState } from "react";
 import AdminLogoutButton from "@/components/admin-logout-button";
 import {
   IconBell,
   IconCalendar,
   IconCard,
+  IconChart,
   IconClipboard,
   IconDashboard,
   IconFileText,
   IconInbox,
   IconMail,
   IconSearch,
+  IconShirt,
+  IconShoppingBag,
   IconUsers,
   IconAudit
 } from "@/components/admin/admin-nav-icons";
@@ -33,9 +37,32 @@ function financeSublinkActive(pathname: string, href: string, exact: boolean): b
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+/** Hrefs that are not yet live — rendered as non-clickable placeholders. */
+const DISABLED_HREFS = new Set([
+  "/admin/dashboard",
+  "/admin/search",
+  "/admin/audit",
+  "/admin/activity-logs",
+  "/admin/players",
+  "/admin/applications",
+  "/admin/communication",
+  "/admin/kits",
+  "/admin/kit-orders",
+  "/admin/kit-orders/finance"
+]);
+
+/** Groups whose section header (label row) should also appear muted. */
+const DISABLED_GROUPS = new Set(["Operations", "Finance & comms", "Kit ordering"]);
 import { AdminServerRefreshOnMutation } from "@/components/admin/admin-server-refresh-on-mutation";
-import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { ADMIN_BACKGROUND_POLL_INTERVAL_MS, ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
+import type { AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
+import {
+  adminApiFetch,
+  handleAdminSessionExpired,
+  handleBackgroundAuthFailure,
+  resetBackgroundAuthFailures
+} from "@/lib/admin-api-fetch";
 import { CMS_PAGE_LINKS, cmsAdminPath } from "@/lib/cms-nav";
 
 const PAGE_TITLE: Record<string, string> = {
@@ -53,7 +80,13 @@ const PAGE_TITLE: Record<string, string> = {
   "/admin/timetable": "Timetable",
   "/admin/content": "Content",
   "/admin/search": "Search",
-  "/admin/audit": "System audit"
+  "/admin/audit": "System audit",
+  "/admin/activity-logs": "Activity logs",
+  "/admin/kits": "Kit management",
+  "/admin/kit-orders": "Kit orders",
+  "/admin/settings": "Profile & security",
+  "/admin/forgot-password": "Recover access",
+  "/admin/reset-password": "Set new password"
 };
 
 function financeTitle(pathname: string): string | undefined {
@@ -69,6 +102,7 @@ const NAV_GROUPS = [
       { href: "/admin/dashboard" as const, label: "Overview", Icon: IconDashboard },
       { href: "/admin/search" as const, label: "Search", Icon: IconSearch },
       { href: "/admin/audit" as const, label: "System audit", Icon: IconAudit },
+      { href: "/admin/activity-logs" as const, label: "Activity logs", Icon: IconFileText },
       { href: "/admin/players" as const, label: "Players", Icon: IconUsers },
       { href: "/admin/applications" as const, label: "Applications", Icon: IconClipboard }
     ]
@@ -78,6 +112,14 @@ const NAV_GROUPS = [
     items: [{ href: "/admin/communication" as const, label: "Messages", Icon: IconMail }]
   },
   {
+    label: "Kit ordering",
+    items: [
+      { href: "/admin/kits" as const, label: "Kit management", Icon: IconShirt },
+      { href: "/admin/kit-orders" as const, label: "Kit orders", Icon: IconShoppingBag },
+      { href: "/admin/kit-orders/finance" as const, label: "Kit finances", Icon: IconChart }
+    ]
+  },
+  {
     label: "Schedule & site",
     items: [{ href: "/admin/timetable" as const, label: "Timetable", Icon: IconCalendar }]
   }
@@ -85,6 +127,10 @@ const NAV_GROUPS = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
+  const bareAdminAuthRoute =
+    pathname === "/admin/login" ||
+    pathname === "/admin/forgot-password" ||
+    pathname === "/admin/reset-password";
   const [open, setOpen] = useState(false);
   const [pendingApps, setPendingApps] = useState(0);
   const [inboxCount, setInboxCount] = useState(0);
@@ -118,11 +164,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           : "Admin");
 
   useEffect(() => {
-    if (pathname === "/admin/login") return;
+    if (bareAdminAuthRoute) return;
     let cancelled = false;
     function refreshTopbar() {
       adminApiFetch("/api/admin/summary")
-        .then((r) => (r.ok ? r.json() : null))
+        .then(async (r) => {
+          if (r.status === 401) {
+            // Use the resilient background handler — requires 2 consecutive
+            // failures before triggering sign-out so a single transient 401
+            // (file lock, hot-reload, etc.) doesn't evict an active admin.
+            handleBackgroundAuthFailure();
+            return null;
+          }
+          // Successful response resets the consecutive failure counter.
+          resetBackgroundAuthFailures();
+          return r.ok ? r.json() : null;
+        })
         .then((d) => {
           if (cancelled || !d) return;
           if (d.pendingApplications != null) setPendingApps(Number(d.pendingApplications));
@@ -135,7 +192,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     const onCustom = () => refreshTopbar();
     window.addEventListener(ADMIN_OVERVIEW_REFRESH, onCustom);
     const onVis = () => {
-      if (document.visibilityState === "visible") refreshTopbar();
+      if (document.visibilityState !== "visible") return;
+      window.dispatchEvent(
+        new CustomEvent<AdminOverviewRefreshDetail>(ADMIN_OVERVIEW_REFRESH, { detail: { silent: true } })
+      );
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -143,14 +203,31 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       window.removeEventListener(ADMIN_OVERVIEW_REFRESH, onCustom);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [pathname]);
+  }, [bareAdminAuthRoute]);
 
-  if (pathname === "/admin/login") {
-    return <div className="admin-auth-root">{children}</div>;
+  /** Background poll: badge counts + client pages using {@link useAdminOverviewRefresh} (no sign-out). */
+  useEffect(() => {
+    if (bareAdminAuthRoute) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      window.dispatchEvent(
+        new CustomEvent<AdminOverviewRefreshDetail>(ADMIN_OVERVIEW_REFRESH, { detail: { silent: true } })
+      );
+    }, ADMIN_BACKGROUND_POLL_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [bareAdminAuthRoute]);
+
+  if (bareAdminAuthRoute) {
+    return (
+      <PortalAuthNotifyProvider>
+        <div className="admin-auth-root">{children}</div>
+      </PortalAuthNotifyProvider>
+    );
   }
 
   return (
-    <div className="admin-root">
+    <PortalAuthNotifyProvider>
+      <div className="admin-root">
       <AdminServerRefreshOnMutation />
       {open ? (
         <button type="button" className="admin-sidebar-backdrop" aria-label="Close menu" onClick={() => setOpen(false)} />
@@ -168,122 +245,119 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="admin-nav" aria-label="Admin">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label} className="admin-nav-group">
-              <p className="admin-nav-group-label">{group.label}</p>
-              <ul className="admin-nav-list">
-                {group.label === "Finance & comms" ? (
-                  <li
-                    className="admin-nav-content-wrap admin-nav-finance-wrap"
-                    onMouseEnter={() => setFinanceNavHover(true)}
-                    onMouseLeave={() => setFinanceNavHover(false)}
-                  >
-                    <button
-                      type="button"
-                      className={clsx(
-                        "admin-nav-link admin-nav-link--toggle",
-                        financeSection && "admin-nav-link--active"
-                      )}
-                      aria-expanded={financeSubVisible}
-                      id="admin-nav-finance-trigger"
-                      onClick={() => setFinanceMenuOpen((v) => !v)}
-                    >
-                      <span className="admin-nav-link-icon" aria-hidden>
-                        <IconCard />
-                      </span>
-                      <span className="admin-nav-link-text">Finance</span>
-                      {openInvoicesCount > 0 ? (
-                        <span className="admin-nav-badge" title="Open invoices (not paid yet)">
-                          {openInvoicesCount > 99 ? "99+" : openInvoicesCount}
-                        </span>
-                      ) : null}
-                      <span className="admin-nav-chevron" aria-hidden>
-                        {financeSubVisible ? "▾" : "▸"}
-                      </span>
-                    </button>
-                    {financeSubVisible ? (
-                      <ul className="admin-nav-sublist" role="list" aria-labelledby="admin-nav-finance-trigger">
-                        {FINANCE_SUBLINKS.map(({ href, label, exact }) => {
-                          const subActive = financeSublinkActive(pathname, href, exact);
-                          return (
-                            <li key={href}>
-                              <Link
-                                href={href}
-                                className={clsx("admin-nav-sublink", subActive && "admin-nav-sublink--active")}
-                                onClick={() => setOpen(false)}
-                              >
-                                {label}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : null}
-                  </li>
-                ) : null}
-                {group.items.map(({ href, label, Icon }) => {
-                  const active = pathname === href;
-                  return (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        className={clsx("admin-nav-link", active && "admin-nav-link--active")}
-                        onClick={() => setOpen(false)}
+          {NAV_GROUPS.map((group) => {
+            const groupDisabled = DISABLED_GROUPS.has(group.label);
+            return (
+              <div key={group.label} className="admin-nav-group">
+                <p className={clsx("admin-nav-group-label", groupDisabled && "admin-nav-group-label--disabled")}>
+                  {group.label}
+                  {groupDisabled && <span className="admin-nav-group-soon" aria-hidden>Coming soon</span>}
+                </p>
+                <ul className="admin-nav-list">
+                  {/* ── Finance accordion (Finance & comms group) ────────── */}
+                  {group.label === "Finance & comms" ? (
+                    <li className="admin-nav-content-wrap admin-nav-finance-wrap">
+                      {/* Finance toggle — disabled: rendered as a muted span */}
+                      <span
+                        className="admin-nav-link admin-nav-link--disabled"
+                        title="This feature is currently unavailable"
+                        aria-disabled="true"
                       >
                         <span className="admin-nav-link-icon" aria-hidden>
-                          <Icon />
+                          <IconCard />
                         </span>
-                        <span className="admin-nav-link-text">{label}</span>
-                      </Link>
+                        <span className="admin-nav-link-text">Finance</span>
+                        <span className="admin-nav-lock" aria-hidden>🔒</span>
+                      </span>
                     </li>
-                  );
-                })}
-                {group.label === "Schedule & site" ? (
-                  <li className="admin-nav-content-wrap">
-                    <button
-                      type="button"
-                      className={clsx(
-                        "admin-nav-link admin-nav-link--toggle",
-                        contentSection && "admin-nav-link--active"
-                      )}
-                      aria-expanded={contentMenuOpen}
-                      onClick={() => setContentMenuOpen((v) => !v)}
-                    >
-                      <span className="admin-nav-link-icon" aria-hidden>
-                        <IconFileText />
-                      </span>
-                      <span>Content</span>
-                      <span className="admin-nav-chevron" aria-hidden>
-                        {contentMenuOpen ? "▾" : "▸"}
-                      </span>
-                    </button>
-                    {contentMenuOpen ? (
-                      <ul className="admin-nav-sublist" role="list">
-                        {CMS_PAGE_LINKS.map((p) => {
-                          const href = cmsAdminPath(p.slug);
-                          const subActive = pathname === href;
-                          return (
-                            <li key={p.slug}>
-                              <Link
-                                href={href}
-                                className={clsx("admin-nav-sublink", subActive && "admin-nav-sublink--active")}
-                                onClick={() => setOpen(false)}
-                              >
-                                {p.label}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : null}
-                  </li>
-                ) : null}
-              </ul>
-            </div>
-          ))}
+                  ) : null}
+
+                  {/* ── Regular nav items ────────────────────────────────── */}
+                  {group.items.map(({ href, label, Icon }) => {
+                    const disabled = DISABLED_HREFS.has(href);
+                    const active = !disabled && pathname === href;
+                    if (disabled) {
+                      return (
+                        <li key={href}>
+                          <span
+                            className="admin-nav-link admin-nav-link--disabled"
+                            title="This feature is currently unavailable"
+                            aria-disabled="true"
+                          >
+                            <span className="admin-nav-link-icon" aria-hidden>
+                              <Icon />
+                            </span>
+                            <span className="admin-nav-link-text">{label}</span>
+                            <span className="admin-nav-lock" aria-hidden>🔒</span>
+                          </span>
+                        </li>
+                      );
+                    }
+                    return (
+                      <li key={href}>
+                        <Link
+                          href={href}
+                          className={clsx("admin-nav-link", active && "admin-nav-link--active")}
+                          onClick={() => setOpen(false)}
+                        >
+                          <span className="admin-nav-link-icon" aria-hidden>
+                            <Icon />
+                          </span>
+                          <span className="admin-nav-link-text">{label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+
+                  {/* ── Content accordion (Schedule & site group) ────────── */}
+                  {group.label === "Schedule & site" ? (
+                    <li className="admin-nav-content-wrap">
+                      <button
+                        type="button"
+                        className={clsx(
+                          "admin-nav-link admin-nav-link--toggle",
+                          contentSection && "admin-nav-link--active"
+                        )}
+                        aria-expanded={contentMenuOpen}
+                        onClick={() => setContentMenuOpen((v) => !v)}
+                      >
+                        <span className="admin-nav-link-icon" aria-hidden>
+                          <IconFileText />
+                        </span>
+                        <span>Content</span>
+                        <span className={`admin-nav-chevron${contentMenuOpen ? " admin-nav-chevron--open" : ""}`} aria-hidden />
+                      </button>
+                      {contentMenuOpen ? (
+                        <ul className="admin-nav-sublist" role="list">
+                          {CMS_PAGE_LINKS.map((p) => {
+                            const href = cmsAdminPath(p.slug);
+                            const subActive = pathname === href;
+                            return (
+                              <li key={p.slug}>
+                                <Link
+                                  href={href}
+                                  className={clsx("admin-nav-sublink", subActive && "admin-nav-sublink--active")}
+                                  onClick={() => setOpen(false)}
+                                >
+                                  {p.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : null}
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
 
         <div className="admin-sidebar-foot">
+          <Link href="/admin/settings" className="admin-sidebar-account-link">
+            Profile &amp; security
+          </Link>
           <AdminLogoutButton />
         </div>
       </aside>
@@ -354,5 +428,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </div>
+    </PortalAuthNotifyProvider>
   );
 }

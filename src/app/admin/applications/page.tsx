@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ADMIN_OVERVIEW_REFRESH, type AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import { SystemNotice } from "@/components/system/system-notice";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import type { RegistrationProfile, RegistrationStatus } from "@/lib/types";
 
-type PaymentLite = { paymentFor: string; status: string };
+type PaymentLite = { paymentFor: string; status: string; paidAt?: string | null };
 
 type Row = {
   id: string;
@@ -20,22 +21,18 @@ type Row = {
   registrationProfile?: RegistrationProfile;
   parent?: { parentName: string; email: string; phoneNumber: string } | null;
   payments?: PaymentLite[];
+  playerDanger?: boolean;
 };
 
-function regFeePaid(payments: PaymentLite[] | undefined): boolean {
-  if (!payments?.length) return false;
-  return payments.some((p) => /registration fee/i.test(p.paymentFor) && p.status === "paid");
+function paidRegistration(payments: PaymentLite[] | undefined): PaymentLite | null {
+  if (!payments?.length) return null;
+  return (
+    payments.find((p) => /registration fee/i.test(p.paymentFor) && p.status === "paid") ?? null
+  );
 }
 
 async function readApiError(r: Response): Promise<string> {
-  const t = await r.text();
-  try {
-    const j = JSON.parse(t) as { message?: string };
-    if (j && typeof j.message === "string" && j.message) return j.message;
-  } catch {
-    /* plain text */
-  }
-  return t || r.statusText || "Request failed";
+  return readAdminApiError(r);
 }
 
 type Tab = "pending" | "approved" | "rejected" | "all";
@@ -46,20 +43,25 @@ export default function AdminApplicationsPage() {
   const [tab, setTab] = useState<Tab>("pending");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const inFlightRef = useRef<Set<string>>(new Set());
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErr("");
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setErr("");
+    }
     try {
       const r = await adminApiFetch(`/api/admin/players?registration=all`);
       if (!r.ok) throw new Error(await readApiError(r));
       const data = await r.json();
       setRows(data.players);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed");
+      if (!silent) setErr(e instanceof Error ? e.message : "Failed");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -85,8 +87,11 @@ export default function AdminApplicationsPage() {
   }, [rows]);
 
   async function decide(id: string, status: "approved" | "rejected") {
+    if (inFlightRef.current.has(id)) return;
+    inFlightRef.current.add(id);
     setBusy(id);
     setErr("");
+    setNotice("");
     try {
       const r = await adminApiFetch(`/api/registrations/${id}/status`, {
         method: "PATCH",
@@ -94,11 +99,20 @@ export default function AdminApplicationsPage() {
         body: JSON.stringify({ status })
       });
       if (!r.ok) throw new Error(await readApiError(r));
+      const json = (await r.json().catch(() => ({}))) as { message?: string };
+      const msg =
+        json.message ??
+        (status === "approved"
+          ? "Player admitted. Monthly invoice now waiting for the parent to pay."
+          : "Application declined.");
+      setNotice(msg);
       window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));
       router.refresh();
+      await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed");
     } finally {
+      inFlightRef.current.delete(id);
       setBusy(null);
     }
   }
@@ -109,13 +123,23 @@ export default function AdminApplicationsPage() {
         <span className="k-pill">APPLICATIONS</span>
         <h1 className="page-h1">Applications &amp; admissions</h1>
         <p className="page-lead muted">
-          Every registration lives on the player record — pending, admitted, or declined. Open a profile to view or
-          edit the full intake, parent contacts, and payments. Admission requires a paid registration fee.
+          Every registration lives on the player record — pending, admitted, or declined. The application fee
+          must be confirmed before you can admit. Admitting a player automatically generates the first monthly
+          membership invoice for the parent.
         </p>
       </div>
 
       <div className="card">
-        {err ? <p className="form-message">{err}</p> : null}
+        {err ? (
+          <SystemNotice variant="error" title="Action failed">
+            {err}
+          </SystemNotice>
+        ) : null}
+        {notice ? (
+          <SystemNotice variant="success" title="Done">
+            {notice}
+          </SystemNotice>
+        ) : null}
 
         <div className="admin-applications-tabs" role="tablist" aria-label="Application status">
           {(
@@ -161,15 +185,18 @@ export default function AdminApplicationsPage() {
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const paid = regFeePaid(p.payments);
+                const paid = paidRegistration(p.payments);
                 const nat = p.registrationProfile?.nationality?.trim() || "—";
                 const submitted = p.createdAt ? p.createdAt.slice(0, 10) : "—";
+                const isBusy = busy === p.id;
                 return (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={p.playerDanger ? "admin-pay-row--danger" : undefined}>
                     <td className="muted admin-cell-muted">{submitted}</td>
                     <td>
-                      <strong>{p.playerName}</strong>
-                      <br />
+                      <div className="admin-table-cell-player">
+                        <strong>{p.playerName}</strong>
+                        {p.playerDanger ? <span className="admin-danger-flag">DANGER</span> : null}
+                      </div>
                       <span className="muted admin-cell-muted">DOB {p.dateOfBirth?.slice(0, 10) ?? "—"}</span>
                     </td>
                     <td>{p.ageGroup}</td>
@@ -189,6 +216,11 @@ export default function AdminApplicationsPage() {
                       <span className={`admin-badge ${paid ? "admin-badge--success" : "admin-badge--warn"}`}>
                         {paid ? "Paid" : "Unpaid"}
                       </span>
+                      {paid?.paidAt ? (
+                        <div className="muted admin-cell-muted" style={{ marginTop: "0.2rem" }}>
+                          on {paid.paidAt.slice(0, 10)}
+                        </div>
+                      ) : null}
                     </td>
                     <td>
                       <span
@@ -213,16 +245,22 @@ export default function AdminApplicationsPage() {
                             <button
                               type="button"
                               className="btn admin-btn-sm"
-                              disabled={busy === p.id || !paid}
-                              title={!paid ? "Registration fee must be paid first" : undefined}
+                              disabled={isBusy || !paid}
+                              aria-busy={isBusy || undefined}
+                              title={
+                                !paid
+                                  ? "Application fee must be paid first."
+                                  : "Admit player and start monthly membership billing."
+                              }
                               onClick={() => decide(p.id, "approved")}
                             >
-                              Approve
+                              {isBusy ? "Working…" : "Admit player"}
                             </button>
                             <button
                               type="button"
                               className="btn btn-secondary admin-btn-sm"
-                              disabled={busy === p.id}
+                              disabled={isBusy}
+                              aria-busy={isBusy || undefined}
                               onClick={() => decide(p.id, "rejected")}
                             >
                               Decline

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { ADMIN_OVERVIEW_REFRESH, type AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
+import { adminApiFetch, parseAdminApiBody, readAdminApiError } from "@/lib/admin-api-fetch";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 
 type ReportData = {
@@ -33,17 +33,20 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
   const [uploadStatus, setUploadStatus] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const r = await adminApiFetch("/api/admin/reports");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       setData(await r.json());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load reports");
+      if (!silent) setError(e instanceof Error ? e.message : "Failed to load reports");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -66,9 +69,9 @@ export default function AdminReportsPage() {
       method: "POST",
       body: form
     });
-    const body = await r.text();
-    if (!r.ok) {
-      setUploadStatus(`Upload failed: ${body}`);
+    const parsed = await parseAdminApiBody<unknown>(r);
+    if (!parsed.ok) {
+      setUploadStatus(`Upload failed: ${parsed.message}`);
       return;
     }
     setUploadStatus("Roster uploaded successfully.");

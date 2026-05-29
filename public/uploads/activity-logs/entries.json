@@ -1,0 +1,922 @@
+[
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "50709d66-54f5-4f16-b891-152a42ace825",
+    "ts": "2026-05-05T04:08:23.826Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "091d620b-4d77-4256-b1b8-259b9cf18f8b",
+    "ts": "2026-05-05T04:09:16.672Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "c68c0bd2-dbba-4b40-bcf5-5c5a982652c1",
+    "ts": "2026-05-05T04:10:21.711Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "4428b048-2f92-4288-b85b-18d47b20a2a9",
+    "ts": "2026-05-17T09:35:23.066Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "kit.create",
+    "description": "Created kit catalog item: Home jersey — Red and Black",
+    "resourceType": "kit",
+    "resourceId": "cbd49f8e-9b06-4732-a2a0-988361e98c25",
+    "newValue": {
+      "type": "Home jersey",
+      "color": "Red and Black",
+      "price": 35000,
+      "active": true
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "id": "ae64a5bd-3a13-47fc-b0bd-babee8a677df",
+    "ts": "2026-05-17T09:37:03.826Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "43ee0217-97c0-4cd7-a1e4-de7f9bfa95e1",
+    "ts": "2026-05-17T09:41:09.218Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "30097e35-9a33-4ff4-9d55-650541a053e2",
+    "ts": "2026-05-17T09:42:11.533Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "fc499a70-706e-49d0-b0a9-cd21e0d35f12",
+    "actorLabel": "keesr21@gmail.com",
+    "action": "parent.login.success",
+    "description": "Parent signed in with email and password",
+    "metadata": {
+      "linkedPlayerCount": 1
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "935e3186-750a-453e-9bb9-dc087fd35eed",
+    "ts": "2026-05-17T10:03:20.728Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "fc499a70-706e-49d0-b0a9-cd21e0d35f12",
+    "actorLabel": "keesr21@gmail.com",
+    "action": "portal.order.create",
+    "description": "Submitted kit order KIT-2026-00001 for Kees Jr (RF 105,000)",
+    "resourceType": "kit_order",
+    "resourceId": "319625e4-27ad-4406-9c15-e7992ed8f0ca",
+    "newValue": {
+      "reference": "KIT-2026-00001",
+      "playerId": "ee22daeb-a39d-4d5f-8340-6e97344e02f8",
+      "totalAmount": 105000,
+      "currency": "RWF",
+      "lineCount": 1
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "id": "5b0d1c91-2532-48f1-9b2d-9c27c28519eb",
+    "ts": "2026-05-17T10:04:17.762Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "d0997b00-e58c-4710-87e4-f0fd8f6e1530",
+    "ts": "2026-05-17T10:04:27.065Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "445429be-5127-4a3c-a642-af43a0e95447",
+    "ts": "2026-05-17T11:11:30.049Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "eb531ac2-a9ac-43a4-a0e9-59548383e071",
+    "ts": "2026-05-17T11:11:35.419Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "kit_order.update",
+    "description": "Kit order KIT-2026-00001: payment approved",
+    "resourceType": "kit_order",
+    "resourceId": "319625e4-27ad-4406-9c15-e7992ed8f0ca",
+    "previousValue": {
+      "status": "pending_payment_approval",
+      "totalAmount": 105000,
+      "paymentRecordCount": 0
+    },
+    "newValue": {
+      "status": "approved",
+      "approvedAt": "2026-05-17T11:11:58.015Z",
+      "approvedBy": "admin@ftprlions.com",
+      "paymentRecordCount": 1
+    },
+    "ip": "::1",
+    "id": "42be725c-f265-4418-a866-f578f07f1abc",
+    "ts": "2026-05-17T11:11:58.037Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "4e792571-731a-45e9-9acb-8be0d25dcd0d",
+    "ts": "2026-05-17T11:13:00.497Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "aab3a452-bbef-4fd0-8dc6-c2c3532e73a0",
+    "ts": "2026-05-17T11:13:03.443Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "463eb1be-f2cd-4815-98cd-ae93b50a9e7c",
+    "ts": "2026-05-17T12:51:10.699Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "registration.status",
+    "description": "Approved registration for Kees Jr",
+    "resourceType": "player",
+    "resourceId": "ee22daeb-a39d-4d5f-8340-6e97344e02f8",
+    "previousValue": {
+      "registrationStatus": "approved"
+    },
+    "newValue": {
+      "registrationStatus": "approved"
+    },
+    "ip": "::1",
+    "id": "c19aa972-2b4d-47b4-80a9-6f47bd5e9cee",
+    "ts": "2026-05-17T13:00:30.213Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "f3bc81b0-c2e5-41a9-ba33-77362017bd6c",
+    "ts": "2026-05-17T13:00:55.652Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "44b3eb4c-db19-4e36-a36d-f67af6126fbc",
+    "ts": "2026-05-17T13:01:54.236Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "634d79ea-493c-4dea-88c1-f1a924c3e25a",
+    "ts": "2026-05-17T13:02:49.334Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "2e0c1f1e-4990-4e5a-a455-fdfbf4d65f6d",
+    "ts": "2026-05-17T18:33:26.649Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "fb476ae2-2aed-4c27-b0ae-b5b491bbf74f",
+    "ts": "2026-05-17T18:33:37.693Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "6152b74d-b1de-4d29-940f-0a4c51ddcf1b",
+    "ts": "2026-05-17T18:33:40.227Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "ac13ddc6-2a77-4695-9b6e-57af40a780c7",
+    "ts": "2026-05-17T18:33:46.940Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "6a2636f0-9ea5-4a86-aa1c-5c15bb360fbe",
+    "ts": "2026-05-17T18:33:48.763Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "f650ee1a-268b-447e-b2d0-836caa6d9478",
+    "ts": "2026-05-17T18:35:23.086Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "ffe124a4-880e-4cf9-a947-b1e9ab38e508",
+    "ts": "2026-05-17T18:36:45.310Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "3fcc1c7f-1657-4b74-b5e7-bb72444e01f8",
+    "ts": "2026-05-17T18:38:14.524Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "registration.status",
+    "description": "Approved registration for Alain Junior",
+    "resourceType": "player",
+    "resourceId": "a5238354-9036-47cf-93b3-24c44cab222b",
+    "previousValue": {
+      "registrationStatus": "approved"
+    },
+    "newValue": {
+      "registrationStatus": "approved"
+    },
+    "ip": "::1",
+    "id": "7630e81e-4017-4726-8c94-1571ff7b76b3",
+    "ts": "2026-05-17T18:39:12.507Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "6519df46-a306-4435-bfc2-26994c052007",
+    "ts": "2026-05-17T18:41:07.054Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "3f36f045-059c-4e38-a02a-9c542fcbfb94",
+    "ts": "2026-05-17T18:41:30.471Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "fc499a70-706e-49d0-b0a9-cd21e0d35f12",
+    "actorLabel": "keesr21@gmail.com",
+    "action": "parent.login.failure",
+    "description": "Parent sign-in blocked: no linked academy records for this email",
+    "metadata": {
+      "reason": "no_linked_parent"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "97384be7-188e-497d-bdd7-985c1d12605b",
+    "ts": "2026-05-17T18:42:21.747Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "fc499a70-706e-49d0-b0a9-cd21e0d35f12",
+    "actorLabel": "keesr21@gmail.com",
+    "action": "parent.login.failure",
+    "description": "Parent sign-in blocked: no linked academy records for this email",
+    "metadata": {
+      "reason": "no_linked_parent"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "8d1eee15-50f5-4689-b478-92714c78f250",
+    "ts": "2026-05-17T18:42:39.871Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "d4cd4873-d5c7-4f1b-8808-8d1a08c53116",
+    "actorLabel": "alain@gmail.com",
+    "action": "parent.login.failure",
+    "description": "Failed parent portal sign-in (bad password)",
+    "metadata": {
+      "email": "alain@gmail.com"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "9367a629-59d2-4b5b-9dbe-2a142e97bb39",
+    "ts": "2026-05-17T18:43:35.965Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "d4cd4873-d5c7-4f1b-8808-8d1a08c53116",
+    "actorLabel": "alain@gmail.com",
+    "action": "parent.login.success",
+    "description": "Parent signed in with email and password",
+    "metadata": {
+      "linkedPlayerCount": 1
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "18cb8d24-3f41-4907-a851-114c2f6438b6",
+    "ts": "2026-05-17T18:43:42.623Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "d4cd4873-d5c7-4f1b-8808-8d1a08c53116",
+    "actorLabel": "alain@gmail.com",
+    "action": "portal.order.create",
+    "description": "Submitted kit order KIT-2026-00002 for Alain Junior (RF 175,000)",
+    "resourceType": "kit_order",
+    "resourceId": "8bf564e8-bdc9-40bf-9ef9-e1730a13c618",
+    "newValue": {
+      "reference": "KIT-2026-00002",
+      "playerId": "a5238354-9036-47cf-93b3-24c44cab222b",
+      "totalAmount": 175000,
+      "currency": "RWF",
+      "lineCount": 1
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "id": "8402129e-bd20-41dd-aa36-c42cbfe8a46b",
+    "ts": "2026-05-17T18:44:34.861Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "4c2e70ce-6617-4b73-9ace-06a5091fd31d",
+    "ts": "2026-05-17T18:45:08.465Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "99547619-23d9-4862-8309-9b4f5454f714",
+    "ts": "2026-05-17T18:45:21.258Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "484051d5-79df-47a0-ab41-6a30d74f88e3",
+    "ts": "2026-05-17T18:47:18.538Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "96216cb2-c7d9-47a3-b153-1fdad37449c7",
+    "ts": "2026-05-17T18:47:38.180Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "kit_order.update",
+    "description": "Kit order KIT-2026-00002: payment approved",
+    "resourceType": "kit_order",
+    "resourceId": "8bf564e8-bdc9-40bf-9ef9-e1730a13c618",
+    "previousValue": {
+      "status": "pending_payment_approval",
+      "totalAmount": 175000,
+      "paymentRecordCount": 0
+    },
+    "newValue": {
+      "status": "approved",
+      "approvedAt": "2026-05-17T18:50:09.245Z",
+      "approvedBy": "admin@ftprlions.com",
+      "paymentRecordCount": 1
+    },
+    "ip": "::1",
+    "id": "4ab5a33b-50e7-4aa6-8b9d-d2af39c0112a",
+    "ts": "2026-05-17T18:50:09.265Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "kit_order.update",
+    "description": "Kit order KIT-2026-00002: delivery marked delivered",
+    "resourceType": "kit_order",
+    "resourceId": "8bf564e8-bdc9-40bf-9ef9-e1730a13c618",
+    "previousValue": {
+      "deliveryStatus": "pending"
+    },
+    "newValue": {
+      "deliveryStatus": "delivered",
+      "deliveredAt": "2026-05-17T18:50:12.517Z",
+      "deliveredBy": "admin@ftprlions.com"
+    },
+    "ip": "::1",
+    "id": "40d13417-abd1-4d82-8b93-0ecebaf397f0",
+    "ts": "2026-05-17T18:50:12.529Z"
+  },
+  {
+    "actorKind": "parent",
+    "actorId": "d4cd4873-d5c7-4f1b-8808-8d1a08c53116",
+    "actorLabel": "alain@gmail.com",
+    "action": "parent.login.failure",
+    "description": "Parent sign-in blocked: no linked academy records for this email",
+    "metadata": {
+      "reason": "no_linked_parent"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "cd247ef9-1df5-405b-bc1f-e770cf32f179",
+    "ts": "2026-05-17T18:50:47.548Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "45f52ddf-6f81-4ac2-b4b3-f472d843b5bf",
+    "ts": "2026-05-17T19:09:36.217Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "7f1175bc-e83c-4a35-998e-5b42d64f56a3",
+    "ts": "2026-05-28T03:12:24.206Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "9a8ffd06-932d-4c82-8c23-f42967bbcf36",
+    "ts": "2026-05-28T03:12:35.884Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "9fd410f9-d2ec-43dc-a213-20c874161c8d",
+    "ts": "2026-05-29T00:02:05.620Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "f0709f88-2a6e-47a4-a4ce-82f49b5ce130",
+    "ts": "2026-05-29T00:19:03.472Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.logout",
+    "description": "Administrator signed out",
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "f3eabdcc-9f7b-4bd3-bc1b-ae7abb20c1d8",
+    "ts": "2026-05-29T00:26:57.506Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "1dcd84cd-e5e2-491f-8112-9ba842542fa7",
+    "ts": "2026-05-29T00:27:22.718Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "d6241a43-598c-4ca7-9d80-10cf3512d9bb",
+    "ts": "2026-05-29T00:28:19.081Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "8e513cdc-3e47-43b1-be40-86d04bac7df4",
+    "ts": "2026-05-29T00:44:51.869Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "71be8c33-5e1d-4a44-94aa-812e41c57a4f",
+    "ts": "2026-05-29T00:45:44.404Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "49f80896-34fc-4519-b84d-9115ec3c9fcf",
+    "ts": "2026-05-29T01:03:09.274Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.logout",
+    "description": "Administrator signed out",
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "a9af343f-270b-4bb1-85e1-6d9a3fedf710",
+    "ts": "2026-05-29T02:04:41.264Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "62e5cb89-dc23-45fd-a056-b967ce8960cb",
+    "ts": "2026-05-29T02:05:08.589Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "5b6eb3b3-43a4-4b84-844f-6f6017108f54",
+    "ts": "2026-05-29T02:05:48.426Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "74f290e5-e332-437d-bf20-050461b2067f",
+    "ts": "2026-05-29T03:01:22.130Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "legacy_env"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "4b1eda40-5bee-427a-ad15-3184ba672d13",
+    "ts": "2026-05-29T03:06:17.379Z"
+  }
+]

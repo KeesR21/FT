@@ -389,6 +389,9 @@ export function createSupabaseDb(): AppDb {
       if (e0) throw e0;
       if (!existing) return null;
       const row = existing as PaymentRow;
+      if (row.status === "paid" && row.paid_at) {
+        return rowToPayment(row);
+      }
       const method = extras?.paymentMethod !== undefined ? extras.paymentMethod : row.payment_method;
       const notes = extras?.paymentNotes !== undefined ? extras.paymentNotes : row.payment_notes;
       const mm = extras?.mobileMoneyRef !== undefined ? extras.mobileMoneyRef : row.mobile_money_ref;
@@ -403,10 +406,15 @@ export function createSupabaseDb(): AppDb {
           mobile_money_ref: mm ?? null
         })
         .eq("id", id)
+        .eq("status", row.status)
         .select("*")
         .maybeSingle();
       if (error) throw error;
-      return data ? rowToPayment(data as PaymentRow) : null;
+      if (!data) {
+        const { data: latest } = await supabase.from("payments").select("*").eq("id", id).maybeSingle();
+        return latest ? rowToPayment(latest as PaymentRow) : null;
+      }
+      return rowToPayment(data as PaymentRow);
     },
 
     async listSessions(ageGroup) {

@@ -1,23 +1,19 @@
 "use client";
 
 import type { SiteContent } from "@/lib/types";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import { formatNetworkError } from "@/lib/api-error";
+import { usePortalAuthNotify } from "@/components/portal/portal-auth-notify";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 async function readApiError(r: Response): Promise<string> {
-  const t = await r.text();
-  try {
-    const j = JSON.parse(t) as { message?: string };
-    if (j?.message) return j.message;
-  } catch {
-    /* plain */
-  }
-  return t || r.statusText || "Request failed";
+  return readAdminApiError(r);
 }
 
 export function useAdminSiteContent() {
   const router = useRouter();
+  const notify = usePortalAuthNotify();
   const [data, setData] = useState<SiteContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -36,9 +32,9 @@ export function useAdminSiteContent() {
       const aborted =
         (e instanceof DOMException && e.name === "AbortError") || (e instanceof Error && e.name === "AbortError");
       if (aborted) {
-        setErr("Request timed out. Check your connection and try again.");
+        setErr("The request timed out. Check your connection and try again.");
       } else {
-        setErr(e instanceof Error ? e.message : "Failed to load");
+        setErr(formatNetworkError(e, "admin"));
       }
     } finally {
       window.clearTimeout(to);
@@ -66,7 +62,7 @@ export function useAdminSiteContent() {
         router.refresh();
         return next as SiteContent;
       } catch (e) {
-        setErr(e instanceof Error ? e.message : "Save failed");
+        setErr(formatNetworkError(e, "admin"));
         return null;
       } finally {
         setSaving(false);
@@ -75,5 +71,40 @@ export function useAdminSiteContent() {
     [router]
   );
 
-  return { data, loading, err, setErr, saving, load, savePartial };
+  /**
+   * Save partial content and show a toast notification on success or error.
+   * Returns the updated SiteContent on success, or null on failure.
+   */
+  const saveWithNotify = useCallback(
+    async (patch: Partial<SiteContent>, successMessage = "Saved successfully") => {
+      setSaving(true);
+      setErr("");
+      try {
+        const r = await adminApiFetch("/api/admin/content", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch)
+        });
+        if (!r.ok) {
+          const msg = await readApiError(r);
+          throw new Error(msg);
+        }
+        const next = await r.json();
+        setData(next);
+        router.refresh();
+        notify.success(successMessage);
+        return next as SiteContent;
+      } catch (e) {
+        const msg = formatNetworkError(e, "admin");
+        setErr(msg);
+        notify.error(msg);
+        return null;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [router, notify]
+  );
+
+  return { data, loading, err, setErr, saving, load, savePartial, saveWithNotify };
 }

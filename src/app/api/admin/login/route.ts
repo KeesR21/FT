@@ -1,14 +1,31 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ADMIN_COOKIE, getSessionToken, isValidAdminCredentials } from "@/lib/auth";
+import { initializeAdminCredentials, rotateAdminSessionToken, verifyAdminLogin } from "@/lib/admin-credential-store";
+import { ADMIN_COOKIE, adminSessionCookieOptions } from "@/lib/auth";
+import { recordActivity } from "@/lib/activity-log";
+import { hashPassword } from "@/lib/password-hash";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getRequestIp } from "@/lib/request-ip";
 
 const schema = z.object({
   email: z.string().email(),
-  password: z.string().min(4)
+  password: z.string().min(1)
 });
 
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_PER_IP = 12;
+
 export async function POST(req: Request) {
+  const ip = getRequestIp(req);
+  const rl = checkRateLimit(`admin-login:${ip}`, LOGIN_MAX_PER_IP, LOGIN_WINDOW_MS);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { message: "Too many sign-in attempts. Please try again later.", retryAfterSec: rl.retryAfterSec },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -18,21 +35,49 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ message: "Invalid login payload" }, { status: 400 });
+    return NextResponse.json({ message: "Enter a valid email and password." }, { status: 400 });
   }
 
   const { email, password } = parsed.data;
-  if (!isValidAdminCredentials(email, password)) {
+  const emailLower = email.trim().toLowerCase();
+
+  const ctx = await verifyAdminLogin(email, password);
+  if (!ctx) {
+    recordActivity(req, {
+      actorKind: "admin",
+      actorId: emailLower,
+      actorLabel: email.trim(),
+      action: "admin.login.failure",
+      description: "Failed administrator sign-in attempt",
+      metadata: { email: emailLower }
+    });
     return NextResponse.json({ message: "Invalid email or password" }, { status: 401 });
   }
 
+  let sessionToken: string;
+
+  if (ctx.mode === "legacy_env") {
+    const hashed = await hashPassword(password);
+    const rec = await initializeAdminCredentials(email, hashed);
+    sessionToken = rec.sessionToken;
+  } else {
+    const rotated = await rotateAdminSessionToken();
+    if (!rotated?.sessionToken) {
+      return NextResponse.json({ message: "Could not start session" }, { status: 500 });
+    }
+    sessionToken = rotated.sessionToken;
+  }
+
   const cookieStore = await cookies();
-  cookieStore.set(ADMIN_COOKIE, getSessionToken(email), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 12
+  cookieStore.set(ADMIN_COOKIE, sessionToken, adminSessionCookieOptions());
+
+  recordActivity(req, {
+    actorKind: "admin",
+    actorId: emailLower,
+    actorLabel: email.trim(),
+    action: "admin.login.success",
+    description: "Administrator signed in",
+    metadata: { mode: ctx.mode }
   });
 
   return NextResponse.json({ message: "Login successful" });

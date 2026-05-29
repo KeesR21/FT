@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { ADMIN_OVERVIEW_REFRESH, type AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import { AGE_GROUPS } from "@/lib/age-groups";
 
@@ -28,14 +28,15 @@ export default function AdminCommunicationPage() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const loadLog = useCallback(async () => {
+  const loadLog = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
     try {
       const r = await adminApiFetch("/api/admin/messages");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       const data = await r.json();
       setLog(data.messages);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed");
+      if (!silent) setErr(e instanceof Error ? e.message : "Failed");
     } finally {
       setLoading(false);
     }
@@ -57,8 +58,8 @@ export default function AdminCommunicationPage() {
     loadPlayers();
   }, [loadLog, loadPlayers]);
 
-  useAdminOverviewRefresh(() => {
-    void loadLog();
+  useAdminOverviewRefresh((detail) => {
+    void loadLog(detail);
     void loadPlayers();
   });
 
@@ -77,7 +78,7 @@ export default function AdminCommunicationPage() {
           alsoEmail
         })
       });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       setSubject("");
       setBody("");
       window.dispatchEvent(new Event(ADMIN_OVERVIEW_REFRESH));

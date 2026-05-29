@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { AGE_GROUPS, isAgeGroup } from "@/lib/age-groups";
+import {
+  daysSinceSubscriptionEnded,
+  isPlayerInDanger
+} from "@/lib/membership-billing";
 import { resolveLedgerPaymentFor } from "@/lib/payment-guards";
 import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
@@ -55,7 +59,9 @@ export async function GET(req: Request) {
         ...p,
         parent,
         payments,
-        subscriptionUi: subscriptionStatusFromDate(p.subscriptionValidUntil)
+        subscriptionUi: subscriptionStatusFromDate(p.subscriptionValidUntil),
+        playerDanger: isPlayerInDanger(p),
+        playerOverdueDays: daysSinceSubscriptionEnded(p.subscriptionValidUntil)
       };
     })
   );

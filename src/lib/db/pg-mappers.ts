@@ -8,6 +8,7 @@ import type {
   TimetableSession
 } from "@/lib/types";
 import { parseRegistrationProfileRow } from "@/lib/registration-profile";
+import { normalizeTimetableSession, parseStringArray } from "@/lib/timetable-session";
 import { computePaymentStatus } from "@/lib/utils";
 
 export type ParentRow = {
@@ -67,6 +68,12 @@ export type SessionRow = {
   is_updated: boolean;
   updated_at: string | null;
   created_at: string;
+  trainer_name?: string;
+  age_groups?: unknown;
+  activities?: unknown;
+  session_objectives?: string;
+  equipment_notes?: string;
+  instructor_notes?: string;
 };
 
 export type PerformanceRow = {
@@ -141,18 +148,25 @@ export function rowToPayment(r: PaymentRow): Payment {
 }
 
 export function rowToSession(r: SessionRow): TimetableSession {
-  return {
+  const ageGroups = parseStringArray(r.age_groups);
+  return normalizeTimetableSession({
     id: r.id,
     title: r.title || "",
     ageGroup: r.age_group,
+    ageGroups: ageGroups.length ? ageGroups : undefined,
     kind: r.kind,
     startsAt: r.starts_at,
     endsAt: r.ends_at,
     locationName: r.location_name,
     kitRequirements: r.kit_requirements,
+    trainerName: r.trainer_name,
+    activities: parseStringArray(r.activities),
+    sessionObjectives: r.session_objectives,
+    equipmentNotes: r.equipment_notes,
+    instructorNotes: r.instructor_notes,
     isUpdated: r.is_updated,
     updatedAt: r.updated_at
-  };
+  });
 }
 
 export function rowToPerformance(r: PerformanceRow): PerformanceEntry {
@@ -183,16 +197,23 @@ export function dateOnly(iso: string): string {
 }
 
 export function sessionToInsert(input: Omit<TimetableSession, "id">) {
+  const normalized = normalizeTimetableSession(input);
   return {
-    title: input.title,
-    age_group: input.ageGroup,
-    kind: input.kind,
-    starts_at: input.startsAt,
-    ends_at: input.endsAt,
-    location_name: input.locationName,
-    kit_requirements: input.kitRequirements,
-    is_updated: input.isUpdated,
-    updated_at: input.updatedAt
+    title: normalized.title,
+    age_group: normalized.ageGroup,
+    age_groups: normalized.ageGroups,
+    kind: normalized.kind,
+    starts_at: normalized.startsAt,
+    ends_at: normalized.endsAt,
+    location_name: normalized.locationName,
+    kit_requirements: normalized.kitRequirements,
+    trainer_name: normalized.trainerName,
+    activities: normalized.activities,
+    session_objectives: normalized.sessionObjectives,
+    equipment_notes: normalized.equipmentNotes,
+    instructor_notes: normalized.instructorNotes,
+    is_updated: normalized.isUpdated,
+    updated_at: normalized.updatedAt
   };
 }
 
@@ -200,11 +221,20 @@ export function sessionPatchToRow(patch: Partial<Omit<TimetableSession, "id">>):
   const out: Record<string, unknown> = {};
   if (patch.title !== undefined) out.title = patch.title;
   if (patch.ageGroup !== undefined) out.age_group = patch.ageGroup;
+  if (patch.ageGroups !== undefined) {
+    out.age_groups = patch.ageGroups;
+    out.age_group = patch.ageGroups[0] ?? patch.ageGroup;
+  }
   if (patch.kind !== undefined) out.kind = patch.kind;
   if (patch.startsAt !== undefined) out.starts_at = patch.startsAt;
   if (patch.endsAt !== undefined) out.ends_at = patch.endsAt;
   if (patch.locationName !== undefined) out.location_name = patch.locationName;
   if (patch.kitRequirements !== undefined) out.kit_requirements = patch.kitRequirements;
+  if (patch.trainerName !== undefined) out.trainer_name = patch.trainerName;
+  if (patch.activities !== undefined) out.activities = patch.activities;
+  if (patch.sessionObjectives !== undefined) out.session_objectives = patch.sessionObjectives;
+  if (patch.equipmentNotes !== undefined) out.equipment_notes = patch.equipmentNotes;
+  if (patch.instructorNotes !== undefined) out.instructor_notes = patch.instructorNotes;
   if (patch.isUpdated !== undefined) out.is_updated = patch.isUpdated;
   if (patch.updatedAt !== undefined) out.updated_at = patch.updatedAt;
   return out;

@@ -1,5 +1,10 @@
 import { format } from "date-fns";
-import type { Payment } from "@/lib/types";
+import {
+  findOpenMonthlyInvoice,
+  isVoidedInvoice,
+  isWithinActiveMembership
+} from "@/lib/membership-billing";
+import type { Payment, Player } from "@/lib/types";
 
 export function monthKey(iso: string) {
   return iso.slice(0, 7);
@@ -49,8 +54,59 @@ export function isDuplicateOpenInvoice(
   const dueMonth = monthKey(input.dueDate);
   return existing.find(
     (p) =>
+      !isVoidedInvoice(p) &&
       normalizeText(resolveLedgerPaymentFor(p.paymentFor, p.dueDate)) === purpose &&
       monthKey(p.dueDate) === dueMonth &&
       p.status !== "paid"
   );
+}
+
+/** Reason why a monthly invoice cannot currently be created for a player. */
+export type MonthlyInvoiceBlockReason =
+  | "open_monthly_invoice_exists"
+  | "active_subscription_not_renewable_yet"
+  | "duplicate_for_month";
+
+export type MonthlyInvoiceGuardResult =
+  | { ok: true }
+  | { ok: false; reason: MonthlyInvoiceBlockReason; existing?: Payment };
+
+/**
+ * Authoritative pre-check before creating a new monthly membership invoice.
+ *
+ * Blocks creation when:
+ * 1. The player still has an unpaid open monthly invoice (`open_monthly_invoice_exists`).
+ * 2. The player has an active subscription that is NOT yet inside the renewal window
+ *    (`active_subscription_not_renewable_yet`) — protects against charging current players again.
+ * 3. There is already a non-paid invoice for the same calendar month (`duplicate_for_month`).
+ *
+ * Pass `now` for deterministic tests / cron jobs.
+ */
+export function canCreateNewMonthlyInvoice(input: {
+  player: Player;
+  payments: Payment[];
+  dueDate: string;
+  now?: Date;
+}): MonthlyInvoiceGuardResult {
+  const { player, payments } = input;
+  const now = input.now ?? new Date();
+
+  const openMonthly = findOpenMonthlyInvoice(payments);
+  if (openMonthly) {
+    return { ok: false, reason: "open_monthly_invoice_exists", existing: openMonthly };
+  }
+
+  const dupForMonth = isDuplicateOpenInvoice(payments, {
+    paymentFor: monthlyFeePaymentFor(input.dueDate),
+    dueDate: input.dueDate
+  });
+  if (dupForMonth) {
+    return { ok: false, reason: "duplicate_for_month", existing: dupForMonth };
+  }
+
+  if (isWithinActiveMembership(player, now)) {
+    return { ok: false, reason: "active_subscription_not_renewable_yet" };
+  }
+
+  return { ok: true };
 }

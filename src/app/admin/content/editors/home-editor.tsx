@@ -534,8 +534,14 @@ export function HomeEditor() {
                       <input className="input-field" value={homeEliteTitle} onChange={(e) => setHomeEliteTitle(e.target.value)} />
                     </label>
                     <label className="form-label">
-                      <span>Body</span>
-                      <textarea className="input-field" rows={3} value={homeEliteBody} onChange={(e) => setHomeEliteBody(e.target.value)} />
+                      <span>Quote subtitle</span>
+                      <textarea
+                        className="input-field"
+                        rows={2}
+                        value={homeEliteBody}
+                        onChange={(e) => setHomeEliteBody(e.target.value)}
+                        placeholder="Short line above the rotating quotes"
+                      />
                     </label>
                   </div>
                 </div>

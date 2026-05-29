@@ -11,7 +11,13 @@ import {
   updateInvoiceLogPaymentId
 } from "@/lib/invoice-log-store";
 import { generateCombinedInvoicePdf, generateMonthlyInvoicePdf } from "@/lib/invoice-pdf";
-import { isDuplicateOpenInvoice, monthlyFeePaymentFor, monthKey } from "@/lib/payment-guards";
+import { findOpenMonthlyInvoice } from "@/lib/membership-billing";
+import {
+  canCreateNewMonthlyInvoice,
+  isDuplicateOpenInvoice,
+  monthlyFeePaymentFor,
+  monthKey
+} from "@/lib/payment-guards";
 import { getMonthlyFeeForGroup, loadPricing } from "@/lib/pricing-store";
 import {
   createCombinedInvoiceLog,
@@ -314,8 +320,16 @@ async function generateCombinedInvoice(input: {
     const playerDue = player.subscriptionValidUntil!;
     const paymentFor = monthlyFeePaymentFor(playerDue);
     const existing = await db.listPaymentsForPlayer(player.id);
-    let payment = isDuplicateOpenInvoice(existing, { paymentFor, dueDate: playerDue });
+    const openMonthly = findOpenMonthlyInvoice(existing);
+    let payment = openMonthly ?? null;
     if (!payment) {
+      const guard = canCreateNewMonthlyInvoice({ player, payments: existing, dueDate: playerDue });
+      if (!guard.ok) {
+        return {
+          error: `Cannot include ${player.playerName} on the combined invoice (${guard.reason}).`,
+          status: 409
+        };
+      }
       payment = await db.createPayment({
         playerId: player.id,
         amount: fee.amount,
@@ -412,9 +426,15 @@ export async function POST(req: Request) {
     const dueDate = player.subscriptionValidUntil;
     const paymentFor = monthlyFeePaymentFor(dueDate);
     const existing = await db.listPaymentsForPlayer(player.id);
-    if (isDuplicateOpenInvoice(existing, { paymentFor, dueDate })) {
+    const guard = canCreateNewMonthlyInvoice({ player, payments: existing, dueDate });
+    if (!guard.ok) {
+      const messageMap: Record<typeof guard.reason, string> = {
+        open_monthly_invoice_exists: `${player.playerName} already has an open monthly invoice. Resolve that one before generating another (only one open monthly invoice is allowed per player).`,
+        active_subscription_not_renewable_yet: `${player.playerName} still has an active monthly subscription. Wait until the membership is in its last 3 days or has expired.`,
+        duplicate_for_month: "Open monthly invoice already exists for this subscription period."
+      };
       return NextResponse.json(
-        { message: "Open monthly invoice already exists for this subscription period." },
+        { message: messageMap[guard.reason], code: "MONTHLY_INVOICE_BLOCKED", reason: guard.reason },
         { status: 409 }
       );
     }
@@ -561,14 +581,31 @@ export async function POST(req: Request) {
     const skipped: string[] = [];
     const approved: string[] = [];
     for (const line of log.lineItems) {
+      const before = await db.getPayment(line.paymentId);
+      if (!before) {
+        skipped.push(line.playerName);
+        continue;
+      }
+      const player = await db.getPlayer(line.playerId);
+      if (!player) {
+        skipped.push(line.playerName);
+        continue;
+      }
+      const wasAlreadyPaid = before.status === "paid";
+      const priorValidUntil = wasAlreadyPaid ? null : player.subscriptionValidUntil ?? null;
       const verified = await db.verifyPayment(line.paymentId, adminEmail);
       if (!verified) {
         skipped.push(line.playerName);
         continue;
       }
-      const player = await db.getPlayer(line.playerId);
-      if (!player) continue;
-      const membership = getMonthlyMembershipWindow(verified.paidAt ?? new Date().toISOString());
+      if (wasAlreadyPaid) {
+        approved.push(player.playerName);
+        continue;
+      }
+      const membership = getMonthlyMembershipWindow({
+        paidAt: verified.paidAt ?? new Date().toISOString(),
+        priorValidUntil
+      });
       await db.updatePlayer(player.id, { subscriptionValidUntil: membership.endsAt });
       const parent = await db.getParentByPlayerId(player.id);
       if (parent?.email) {
@@ -685,10 +722,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Reminder sent." });
   }
 
+  const wasAlreadyPaid = payment.status === "paid";
+  const priorValidUntilForApprove = wasAlreadyPaid ? null : player?.subscriptionValidUntil ?? null;
   const verified = await db.verifyPayment(payment.id, adminEmail);
   if (!verified) return NextResponse.json({ message: "Payment not found." }, { status: 404 });
+  if (wasAlreadyPaid) {
+    revalidateAdminViews();
+    return NextResponse.json({
+      message: "Payment was already approved — no changes were made.",
+      idempotent: true
+    });
+  }
   if (player) {
-    const membership = getMonthlyMembershipWindow(verified.paidAt ?? new Date().toISOString());
+    const membership = getMonthlyMembershipWindow({
+      paidAt: verified.paidAt ?? new Date().toISOString(),
+      priorValidUntil: priorValidUntilForApprove
+    });
     await db.updatePlayer(player.id, { subscriptionValidUntil: membership.endsAt });
     if (parent?.email) {
       await sendPaymentApprovedEmail({

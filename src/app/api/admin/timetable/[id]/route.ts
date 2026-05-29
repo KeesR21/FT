@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { db } from "@/lib/db";
 import { notifyTimetableChange } from "@/lib/notifications";
 import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { revalidatePublicSite } from "@/lib/revalidate-public";
+import { patchToSessionFields } from "@/lib/schedule-api-body";
+import { findScheduleConflicts } from "@/lib/timetable-conflicts";
+import { timetableSessionPatchSchema } from "@/lib/timetable-api-schema";
 import { validateScheduleWindow, validateSessionTimes } from "@/lib/timetable-validation";
 import { jsonMessage } from "@/lib/utils";
-
-const patchSchema = z.object({
-  title: z.string().min(2).optional(),
-  ageGroup: z.string().optional(),
-  kind: z.enum(["training", "match"]).optional(),
-  startsAt: z.string().optional(),
-  endsAt: z.string().optional(),
-  locationName: z.string().optional(),
-  kitRequirements: z.string().optional()
-});
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const unauthorized = await requireAdmin();
@@ -29,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   } catch {
     return NextResponse.json(jsonMessage("Expected JSON body"), { status: 400 });
   }
-  const parsed = patchSchema.safeParse(body);
+  const parsed = timetableSessionPatchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json(jsonMessage("Invalid session patch"), { status: 400 });
 
   if (Object.keys(parsed.data).length === 0) {
@@ -47,15 +39,24 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json(jsonMessage(v.error), { status: 400 });
   }
 
+  const fields = patchToSessionFields(parsed.data, existing);
+  const all = await db.listSessions();
+  const conflicts = findScheduleConflicts(all, { id, ...fields }, { excludeId: id });
+  if (conflicts.length) {
+    return NextResponse.json(
+      jsonMessage("Scheduling conflict detected.", { conflicts }),
+      { status: 409 }
+    );
+  }
+
   const s = await db.updateSession(id, {
-    ...parsed.data,
+    ...fields,
     isUpdated: true,
     updatedAt: new Date().toISOString()
   });
   if (!s) return NextResponse.json(jsonMessage("Session not found"), { status: 404 });
 
-  const group = s.ageGroup;
-  await notifyTimetableChange(group, "updated", {
+  await notifyTimetableChange(s.ageGroup, "updated", {
     title: s.title,
     kind: s.kind,
     startsAt: s.startsAt,

@@ -80,6 +80,4 @@ export function validateScheduleWindow(
   return validateSessionTimes(startsAtIso, endsAtIso);
 }
 
-export function defaultSessionTitle(ageGroup: string, kind: "training" | "match"): string {
-  return `${ageGroup} ${kind === "match" ? "Match" : "Training"}`;
-}
+export { defaultSessionTitle } from "@/lib/timetable-session";

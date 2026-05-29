@@ -1,8 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PublicRegistrationLink } from "@/components/public/public-registration-link";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Learn about FTPR Lions Football Academy — our mission, coaching philosophy, and commitment to developing well-rounded footballers in Rwanda."
+};
 
 /** Split "Lead — detail" gallery captions into two lines when an em dash is present. */
 function splitGalleryCaption(caption: string): { lead: string; detail: string | null } {
@@ -27,9 +35,7 @@ export default async function AboutPage() {
           <h1 className="about-landing-hero__title">{c.aboutPageTitle}</h1>
           <p className="about-landing-hero__lead">{c.aboutPageLead}</p>
           <div className="about-landing-hero__actions">
-            <Link href="/register" className="btn">
-              Join the academy
-            </Link>
+            <PublicRegistrationLink className="btn">Join the academy</PublicRegistrationLink>
             <Link href="/programs" className="btn btn-secondary">
               View programs
             </Link>
@@ -79,14 +85,20 @@ export default async function AboutPage() {
 
           <div>
             <h2 className="page-section-title about-landing-values-h">{c.aboutValuesTitle}</h2>
-            <div className="about-landing-values">
-              {c.aboutTiles.map((t) => (
-                <article className="card about-landing-value-card" key={t.id}>
-                  <h3 className="about-landing-value-card__title">{t.title}</h3>
-                  <p className="muted about-landing-value-card__body">{t.body}</p>
-                </article>
-              ))}
-            </div>
+            {c.aboutTiles.length === 0 ? (
+              <p className="muted card about-landing-values-empty">
+                Our core values will be published here shortly.
+              </p>
+            ) : (
+              <div className="about-landing-values">
+                {c.aboutTiles.map((t) => (
+                  <article className="card about-landing-value-card" key={t.id}>
+                    <h3 className="about-landing-value-card__title">{t.title}</h3>
+                    <p className="muted about-landing-value-card__body">{t.body}</p>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="about-landing-split k-two-col">
@@ -118,9 +130,7 @@ export default async function AboutPage() {
             <h2 className="page-section-title about-landing-cta__title">{c.aboutCtaTitle}</h2>
             <p className="about-landing-cta__lead muted">{c.aboutCtaLead}</p>
             <div className="about-landing-cta__actions">
-              <Link href="/register" className="btn">
-                Register now
-              </Link>
+              <PublicRegistrationLink className="btn">Register now</PublicRegistrationLink>
               <Link href="/schedule" className="btn btn-secondary">
                 See schedule
               </Link>

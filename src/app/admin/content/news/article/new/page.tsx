@@ -22,7 +22,7 @@ import { normalizeNewsPosts, sortNewsPostsByPublishedDesc } from "@/lib/news-pos
 
 export default function AdminNewsArticleNewPage() {
   const router = useRouter();
-  const { data, loading, err, saving, savePartial, load } = useAdminSiteContent();
+  const { data, loading, err, saving, saveWithNotify, load } = useAdminSiteContent();
   const [form, setForm] = useState(() => emptyNewsArticleFormState());
   const [issues, setIssues] = useState<string[]>([]);
 
@@ -33,7 +33,10 @@ export default function AdminNewsArticleNewPage() {
     if (v.length > 0) return;
     const post = newsPostFromFormState(form);
     const nextPosts = sortNewsPostsByPublishedDesc([post, ...normalizeNewsPosts(data.newsPosts)]);
-    const result = await savePartial({ newsPosts: nextPosts });
+    const result = await saveWithNotify(
+      { newsPosts: nextPosts },
+      post.status === "draft" ? "Article saved as draft." : "Article published successfully."
+    );
     if (result) router.push(cmsAdminPath("news"));
   }
 

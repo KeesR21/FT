@@ -333,6 +333,9 @@ export function createPostgresDb(): AppDb {
       const cur = await sql<PaymentRow[]>`SELECT * FROM payments WHERE id = ${id} LIMIT 1`;
       if (!cur[0]) return null;
       const r = cur[0];
+      if (r.status === "paid" && r.paid_at) {
+        return rowToPayment(r);
+      }
       const paidAt = new Date().toISOString();
       const method = extras?.paymentMethod !== undefined ? extras.paymentMethod : r.payment_method;
       const notes = extras?.paymentNotes !== undefined ? extras.paymentNotes : r.payment_notes;
@@ -345,10 +348,14 @@ export function createPostgresDb(): AppDb {
             payment_method = ${method ?? null},
             payment_notes = ${notes ?? null},
             mobile_money_ref = ${mm ?? null}
-        WHERE id = ${id}
+        WHERE id = ${id} AND status <> 'paid'::payment_status
         RETURNING *
       `;
-      return rows[0] ? rowToPayment(rows[0]) : null;
+      if (!rows[0]) {
+        const fresh = await sql<PaymentRow[]>`SELECT * FROM payments WHERE id = ${id} LIMIT 1`;
+        return fresh[0] ? rowToPayment(fresh[0]) : null;
+      }
+      return rowToPayment(rows[0]);
     },
 
     async listSessions(ageGroup) {
@@ -368,16 +375,24 @@ export function createPostgresDb(): AppDb {
       const s = sessionToInsert(input);
       const rows = await sql<SessionRow[]>`
         INSERT INTO timetable_sessions (
-          title, age_group, kind, starts_at, ends_at, location_name, kit_requirements, is_updated, updated_at
+          title, age_group, age_groups, kind, starts_at, ends_at, location_name, kit_requirements,
+          trainer_name, activities, session_objectives, equipment_notes, instructor_notes,
+          is_updated, updated_at
         )
         VALUES (
           ${s.title},
           ${s.age_group},
+          ${s.age_groups}::jsonb,
           ${s.kind}::session_kind,
           ${s.starts_at}::timestamptz,
           ${s.ends_at}::timestamptz,
           ${s.location_name},
           ${s.kit_requirements},
+          ${s.trainer_name},
+          ${s.activities}::jsonb,
+          ${s.session_objectives},
+          ${s.equipment_notes},
+          ${s.instructor_notes},
           ${s.is_updated},
           ${s.updated_at}
         )

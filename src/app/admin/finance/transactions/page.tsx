@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { ADMIN_OVERVIEW_REFRESH } from "@/lib/admin-client-events";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import type { AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import { AGE_GROUPS } from "@/lib/age-groups";
 import { formatAcademyMoney, formatShortDate, paymentCategoryLabel } from "@/lib/finance-format";
@@ -116,8 +117,8 @@ function TransactionsInner() {
   }, [q]);
 
   const load = useCallback(
-    async (opts?: { quiet?: boolean }) => {
-      const quiet = Boolean(opts?.quiet);
+    async (detail?: AdminOverviewRefreshDetail) => {
+      const quiet = Boolean(detail?.silent);
       if (!quiet) setLoading(true);
       setErr("");
       try {
@@ -136,7 +137,7 @@ function TransactionsInner() {
         qs.set("page", String(page));
         qs.set("pageSize", String(pageSize));
         const r = await adminApiFetch(`/api/admin/payments?${qs}`);
-        if (!r.ok) throw new Error(await r.text());
+        if (!r.ok) throw new Error(await readAdminApiError(r));
         const data = await r.json();
         setRows(data.payments);
         setMetrics(data.metrics);
@@ -224,7 +225,7 @@ function TransactionsInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action })
       });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       setNotice(
         action === "confirm"
           ? "Payment approved successfully."
@@ -236,7 +237,7 @@ function TransactionsInner() {
       if (action === "confirm") {
         setSelected((s) => (s?.id === id ? null : s));
       }
-      await load({ quiet: true });
+      await load({ silent: true });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Action failed");
     } finally {

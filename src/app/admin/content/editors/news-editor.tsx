@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CmsNewsPost, SiteContent } from "@/lib/types";
+import type { SiteContent } from "@/lib/types";
 import { excerptFromNewsHtml, stripHtmlToPlainText } from "@/lib/news-html";
 import { normalizeNewsPosts, sortNewsPostsByPublishedDesc } from "@/lib/news-posts";
 import {

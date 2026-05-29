@@ -4,7 +4,7 @@ import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { maxEdgeForCmsUsage } from "../_lib/resize-image-for-upload";
 import { uploadImageToCms } from "../_lib/cms-upload-image";
 
@@ -493,4 +493,203 @@ export function CmsFormActions({
 /** Optional label row for a single field block (outside CmsSection). */
 export function CmsFieldHint({ children }: { children: ReactNode }) {
   return <p className="cms-field-hint">{children}</p>;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   NEW SHARED COMPONENTS — production-level CMS UX improvements
+   ───────────────────────────────────────────────────────────────── */
+
+/**
+ * Accessible confirmation dialog that replaces `window.confirm` for
+ * destructive actions. Renders a centered modal overlay.
+ */
+export function CmsConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
+  variant = "danger",
+  onConfirm,
+  onCancel
+}: {
+  open: boolean;
+  title: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "danger" | "warning";
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onCancel]);
+
+  if (!open) return null;
+
+  return (
+    <div className="cms-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="cms-confirm-title">
+      <div className="cms-confirm-dialog">
+        <div className={clsx("cms-confirm-dialog__icon-wrap", `cms-confirm-dialog__icon-wrap--${variant}`)} aria-hidden>
+          {variant === "danger" ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          )}
+        </div>
+        <h2 id="cms-confirm-title" className="cms-confirm-dialog__title">{title}</h2>
+        <p className="cms-confirm-dialog__message">{message}</p>
+        <div className="cms-confirm-dialog__actions">
+          <button
+            type="button"
+            className="btn btn-secondary cms-confirm-dialog__cancel"
+            onClick={onCancel}
+            autoFocus
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            className={clsx("btn cms-confirm-dialog__confirm", variant === "danger" && "cms-confirm-dialog__confirm--danger")}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Status badge for draft/published/scheduled states. */
+export function CmsStatusBadge({ status }: { status: "draft" | "published" | "scheduled" | "expired" }) {
+  const label = status === "draft" ? "Draft"
+    : status === "published" ? "Published"
+    : status === "scheduled" ? "Scheduled"
+    : "Expired";
+  return (
+    <span className={clsx("cms-status-badge", `cms-status-badge--${status}`)}>
+      <span className="cms-status-badge__dot" aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Draft/Published toggle switch with accessible label.
+ * `value="draft"` means the content is hidden from the public site.
+ */
+export function CmsDraftSwitch({
+  value,
+  onChange,
+  disabled
+}: {
+  value: "draft" | "published";
+  onChange: (v: "draft" | "published") => void;
+  disabled?: boolean;
+}) {
+  const uid = useId();
+  const isDraft = value === "draft";
+  return (
+    <div className="cms-draft-switch">
+      <button
+        type="button"
+        id={uid}
+        role="switch"
+        aria-checked={!isDraft}
+        disabled={disabled}
+        onClick={() => onChange(isDraft ? "published" : "draft")}
+        className={clsx("cms-draft-switch__btn", !isDraft && "cms-draft-switch__btn--on")}
+        aria-label={isDraft ? "Currently draft — click to publish" : "Currently published — click to set as draft"}
+      >
+        <span className="cms-draft-switch__track" aria-hidden>
+          <span className="cms-draft-switch__thumb" />
+        </span>
+      </button>
+      <label htmlFor={uid} className="cms-draft-switch__label">
+        {isDraft ? (
+          <span className="cms-draft-switch__label--draft">Draft <span className="cms-draft-switch__label-hint">(hidden from public)</span></span>
+        ) : (
+          <span className="cms-draft-switch__label--live">Published <span className="cms-draft-switch__label-hint">(visible on site)</span></span>
+        )}
+      </label>
+    </div>
+  );
+}
+
+/**
+ * Modern save feedback bar — shows saving / success / error state below a form.
+ * Auto-dismisses the success message after 4s.
+ */
+export function CmsSaveBar({
+  saving,
+  error,
+  successMsg = "Saved successfully",
+  onSave,
+  saveLabel = "Save changes",
+  disabled
+}: {
+  saving: boolean;
+  error?: string;
+  successMsg?: string;
+  onSave: () => void | Promise<void>;
+  saveLabel?: string;
+  disabled?: boolean;
+}) {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const prevSaving = useRef(false);
+
+  useEffect(() => {
+    if (prevSaving.current && !saving && !error) {
+      setShowSuccess(true);
+      const t = window.setTimeout(() => setShowSuccess(false), 4000);
+      return () => window.clearTimeout(t);
+    }
+    prevSaving.current = saving;
+  }, [saving, error]);
+
+  return (
+    <div className="cms-save-bar">
+      {error ? (
+        <p className="cms-save-bar__error" role="alert">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          {error}
+        </p>
+      ) : showSuccess ? (
+        <p className="cms-save-bar__success" role="status" aria-live="polite">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+            <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+          </svg>
+          {successMsg}
+        </p>
+      ) : <div />}
+      <button
+        type="button"
+        className="btn cms-save-bar__btn"
+        disabled={disabled || saving}
+        onClick={() => void onSave()}
+      >
+        {saving ? (
+          <>
+            <span className="cms-save-bar__spinner" aria-hidden />
+            Saving…
+          </>
+        ) : saveLabel}
+      </button>
+    </div>
+  );
 }

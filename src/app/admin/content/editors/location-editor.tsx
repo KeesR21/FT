@@ -61,7 +61,7 @@ export function LocationEditor() {
   return (
     <section className="page-stack cms-editor-stack cms-editor-stack--cms">
       <CmsPageHeader
-        title="Locations"
+        title="Pitch locations"
         lead="Hero text, then pitches: each needs a name, written address, and map position. Maps use free OpenStreetMap (no API key); search uses Nominatim geocoding."
         previewHref="/locations"
       />
@@ -70,7 +70,7 @@ export function LocationEditor() {
           {err}
         </CmsAlert>
       ) : null}
-      <CmsSection title="Location page" description="Heading and intro shown on /locations.">
+      <CmsSection title="Pitch locations page" description="Heading and intro shown on /locations.">
         <label className="form-label">
           <span>Page title</span>
           <input className="input-field" value={locationPageTitle} onChange={(e) => setLocationPageTitle(e.target.value)} />

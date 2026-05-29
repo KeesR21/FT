@@ -5,7 +5,9 @@ import { KickstarBlogPostsGrid } from "@/components/kickstar/BlogPostsGrid";
 import { formatNewsListDate } from "@/lib/news-dates";
 import { excerptFromNewsHtml } from "@/lib/news-html";
 import { KickstarCounterRow } from "@/components/kickstar/CounterRow";
+import { EliteInspiredQuoteSlider } from "@/components/kickstar/EliteInspiredQuoteSlider";
 import { KickstarElementsKitHeading } from "@/components/kickstar/ElementsKitHeading";
+import { HomeTodayScheduleCardWithRefresh } from "@/components/kickstar/HomeTodayScheduleCardWithRefresh";
 import { KickstarGlassCard } from "@/components/kickstar/GlassCard";
 import { KickstarIconBox } from "@/components/kickstar/IconBox";
 import { KickstarIconList } from "@/components/kickstar/IconList";
@@ -14,8 +16,10 @@ import { KickstarProgressBar } from "@/components/kickstar/ProgressBar";
 import { KickstarRichText } from "@/components/kickstar/RichText";
 import { KickstarSpacer } from "@/components/kickstar/Spacer";
 import { KickstarTestimonial } from "@/components/kickstar/Testimonial";
-import { KickstarVideoButton } from "@/components/kickstar/VideoButton";
+import { KitPeriodBanner } from "@/components/public/kit-period-banner";
+import { PUBLIC_REGISTRATION_ENABLED, filterPublicRegistrationFaqItems } from "@/lib/site-features";
 import type { CounterItem } from "@/components/kickstar/types";
+import type { HomeScheduleBrief } from "@/lib/weekly-schedule/home-today-brief";
 import type { CmsFaqItem, CmsHomeCounter, CmsHomeHeroImages, CmsHomeSectionImages, CmsHomeTestimonial, CmsNewsPost } from "@/lib/types";
 
 export type KickstarHomePageProps = {
@@ -32,8 +36,7 @@ export type KickstarHomePageProps = {
   homeCounters?: CmsHomeCounter[];
   homeHeroImages?: CmsHomeHeroImages;
   homeSectionImages?: CmsHomeSectionImages;
-  homeCoachTitle?: string;
-  homeCoachBody?: string;
+  todayScheduleBrief: HomeScheduleBrief;
   homeEliteTitle?: string;
   homeEliteBody?: string;
   homeMatchTitle?: string;
@@ -98,10 +101,6 @@ export function KickstarHomePage({
   homeCounters = COUNTERS,
   homeHeroImages = { logo: "/logo.jpeg" },
   homeSectionImages = { pathway: "/academy-3.png", training: "/academy-2.png", iconLogo: "/logo.jpeg" },
-  homeCoachTitle = "Professional Coach",
-  homeCoachBody = "Structured coaching pathways, clear feedback, and development plans for every age group.",
-  homeEliteTitle = "Elite Training",
-  homeEliteBody = "Technical drills, match intelligence, and conditioning aligned with modern football standards.",
   homeMatchTitle = "Match performance",
   homeMatchDescription = "Weekly fixtures and competitive exposure by age group.",
   homeTimetableTitle = "Structured timetable",
@@ -127,8 +126,9 @@ export function KickstarHomePage({
   homeTrainingLead = "Tuesday and Thursday blocks, Saturday matchdays.",
   homeJoinTitle = "Join FTPR Lions {{Today}}",
   homeJoinLead = "Start registration — our team will review your application.",
-  homeJoinButtonLabel = "Start registration"
-}: KickstarHomePageProps = {}) {
+  homeJoinButtonLabel = "Start registration",
+  todayScheduleBrief
+}: KickstarHomePageProps) {
   const heroBg = heroBackgroundSrc?.trim() || HOME_HERO_VISUAL;
   const blogCards = newsPreview.slice(0, 3).map((p) => ({
     id: p.id,
@@ -145,8 +145,10 @@ export function KickstarHomePage({
     title: c.title,
     numberVariant: c.numberVariant
   }));
+  const faqItems = filterPublicRegistrationFaqItems(homeFaqItems);
   return (
     <>
+      <KitPeriodBanner />
       {/* Section: hero — icon-list, elementskit-heading, glass row, jkit + video */}
       <div className="ks-full-bleed ks-hero-root">
         {/* Native <img> avoids /_next/image + sharp (common source of HTTP 500 on large JPEGs). */}
@@ -164,20 +166,14 @@ export function KickstarHomePage({
             <KickstarElementsKitHeading as="h1" align="center" title={heroHeading} />
             <div className="ks-hero-actions">
               <KickstarJKitButton href="/programs" label="Explore programs" iconAfter={<span aria-hidden>↗</span>} />
-              <KickstarJKitButton href="/register" label="Register now" variant="secondary" />
+              {PUBLIC_REGISTRATION_ENABLED ? (
+                <KickstarJKitButton href="/register" label="Register now" variant="secondary" />
+              ) : null}
             </div>
           </div>
 
           <div className="ks-hero-triple">
-            <KickstarGlassCard>
-              <h2 className="ks-glass-h">{homeCoachTitle}</h2>
-              <KickstarRichText>{homeCoachBody}</KickstarRichText>
-              <p className="ks-glass-link-row">
-                <Link href="/our-team" className="ks-text-link">
-                  Explore services →
-                </Link>
-              </p>
-            </KickstarGlassCard>
+            <HomeTodayScheduleCardWithRefresh brief={todayScheduleBrief} />
 
             <div className="ks-hero-player-wrap ks-hero-logo-wrap">
               <div className="ks-hero-logo-panel">
@@ -193,12 +189,7 @@ export function KickstarHomePage({
             </div>
 
             <KickstarGlassCard className="ks-hero-glass--elite">
-              <h2 className="ks-glass-h">{homeEliteTitle}</h2>
-              <KickstarRichText>{homeEliteBody}</KickstarRichText>
-              <div className="ks-glass-actions">
-                <KickstarJKitButton href="/schedule" label="View schedule" />
-                <KickstarVideoButton url="https://www.youtube.com/watch?v=UdS4VRNa6ds" label="Play video" />
-              </div>
+              <EliteInspiredQuoteSlider />
             </KickstarGlassCard>
           </div>
         </div>
@@ -292,7 +283,7 @@ export function KickstarHomePage({
             <KickstarElementsKitHeading as="h2" align="left" title="Frequently asked {{questions}}" />
             <KickstarSpacer height={16} />
             <KickstarAccordion
-              items={homeFaqItems}
+              items={faqItems}
             />
           </div>
 
@@ -334,11 +325,13 @@ export function KickstarHomePage({
             </article>
           </section>
 
-          <section className="card k-center">
-            <KickstarElementsKitHeading as="h2" align="center" title={homeJoinTitle} />
-            <KickstarRichText>{homeJoinLead}</KickstarRichText>
-            <KickstarJKitButton href="/register" label={homeJoinButtonLabel} />
-          </section>
+          {PUBLIC_REGISTRATION_ENABLED ? (
+            <section className="card k-center">
+              <KickstarElementsKitHeading as="h2" align="center" title={homeJoinTitle} />
+              <KickstarRichText>{homeJoinLead}</KickstarRichText>
+              <KickstarJKitButton href="/register" label={homeJoinButtonLabel} />
+            </section>
+          ) : null}
         </section>
       </div>
     </>

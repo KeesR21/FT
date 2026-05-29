@@ -31,7 +31,12 @@ export default async function NewsArticlePage({ params }: Props) {
   const { id } = await params;
   const decoded = decodeURIComponent(id);
   const c = await getCachedSiteContent();
-  const sorted = sortNewsPostsByPublishedDesc(c.newsPosts);
+  const visible = c.newsPosts.filter((p) => {
+    if ((p.status ?? "published") === "draft") return false;
+    if (p.publishedAt && Date.parse(p.publishedAt) > Date.now()) return false;
+    return true;
+  });
+  const sorted = sortNewsPostsByPublishedDesc(visible);
   const post = sorted.find((p) => p.id === decoded);
   if (!post) notFound();
 

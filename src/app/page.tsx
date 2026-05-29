@@ -1,8 +1,16 @@
 import { KickstarHomePage } from "@/components/kickstar/KickstarHomePage";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
 import { sortNewsPostsByPublishedDesc } from "@/lib/news-posts";
+import { getHomeScheduleBrief } from "@/lib/weekly-schedule/home-today-brief";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description:
+    "FTPR Lions Football Academy — professional youth development in Rwanda. Structured training, competitive fixtures, and full transparency for families."
+};
 
 export default async function HomePage() {
   const c = await getCachedSiteContent();
@@ -15,8 +23,7 @@ export default async function HomePage() {
       homeHighlights={c.homeHighlightItems}
       newsPreview={sortNewsPostsByPublishedDesc(c.newsPosts).slice(0, 3)}
       homeCounters={c.homeCounters}
-      homeCoachTitle={c.homeCoachTitle}
-      homeCoachBody={c.homeCoachBody}
+      todayScheduleBrief={getHomeScheduleBrief()}
       homeEliteTitle={c.homeEliteTitle}
       homeEliteBody={c.homeEliteBody}
       homeMatchTitle={c.homeMatchTitle}

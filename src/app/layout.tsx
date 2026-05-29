@@ -39,12 +39,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const h = await headers();
   const pathname = h.get("x-pathname") ?? "";
   const isAdmin = pathname.startsWith("/admin");
+  const isPortal = pathname.startsWith("/portal");
 
   return (
     <html lang="en" className={`${jost.variable} ${poppins.variable}`}>
       <body className="antialiased">
-        {isAdmin ? (
-          <main id="main-content" className="admin-outer-main" tabIndex={-1}>
+        {isAdmin || isPortal ? (
+          <main id="main-content" className={isAdmin ? "admin-outer-main" : "portal-outer-main"} tabIndex={-1}>
             {children}
           </main>
         ) : (

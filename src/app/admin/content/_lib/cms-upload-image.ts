@@ -1,4 +1,5 @@
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, formatAdminApiMessage } from "@/lib/admin-api-fetch";
+import { formatNetworkError } from "@/lib/api-error";
 import { resizeImageForUpload } from "./resize-image-for-upload";
 
 export type CmsUploadResult =
@@ -18,13 +19,13 @@ export async function uploadImageToCms(file: File, maxEdge: number): Promise<Cms
       /* non-JSON */
     }
     if (!r.ok) {
-      return { ok: false, message: data.message ?? `Upload failed (${r.status})` };
+      return { ok: false, message: formatAdminApiMessage(r.status, data.message) };
     }
     if (!data.url) {
       return { ok: false, message: "No URL returned from server." };
     }
     return { ok: true, url: data.url };
-  } catch {
-    return { ok: false, message: "Could not reach the server. Check your connection and try again." };
+  } catch (err) {
+    return { ok: false, message: formatNetworkError(err, "admin") };
   }
 }

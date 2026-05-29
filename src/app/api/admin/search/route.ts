@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import {
+  daysSinceSubscriptionEnded,
+  isPlayerInDanger
+} from "@/lib/membership-billing";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(req: Request) {
@@ -46,6 +50,9 @@ export async function GET(req: Request) {
       ageGroup: p.ageGroup,
       registrationStatus: p.registrationStatus,
       status: p.status,
+      subscriptionValidUntil: p.subscriptionValidUntil ?? null,
+      playerDanger: isPlayerInDanger(p),
+      playerOverdueDays: daysSinceSubscriptionEnded(p.subscriptionValidUntil),
       parent: await db.getParentByPlayerId(p.id)
     });
   }

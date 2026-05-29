@@ -1,48 +1,32 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { Suspense } from "react";
+import { AdminLoginForm } from "@/components/admin/admin-login-form";
 
-/** Gallery hero for login backdrop (transparent overlays in CSS). Change file to swap photo. */
 const LOGIN_BG = "/gallery/FTPR_18.JPG";
 
-export default function AdminLoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+function AdminLoginFallback() {
+  return (
+    <div className="admin-login-page">
+      <div className="admin-login-bg" aria-hidden>
+        <Image src={LOGIN_BG} alt="" fill className="admin-login-bg-image" sizes="100vw" priority quality={80} />
+        <div className="admin-login-bg-veil" />
+        <div className="admin-login-bg-accent" />
+      </div>
+      <div className="admin-login-page-inner">
+        <div className="admin-login-shell">
+          <div className="admin-login-form-col admin-login-form-col--loading">
+            <span className="al-spinner" aria-hidden />
+            Loading…
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    const res = await adminApiFetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-    let data: { message?: string } = {};
-    try {
-      const text = await res.text();
-      if (text) data = JSON.parse(text) as { message?: string };
-    } catch {
-      /* non-JSON body */
-    }
-
-    setLoading(false);
-    if (!res.ok) {
-      setMessage(data.message ?? "Login failed");
-      return;
-    }
-
-    router.push("/admin/dashboard");
-    router.refresh();
-  }
-
+function AdminLoginInner() {
   return (
     <div className="admin-login-page">
       <div className="admin-login-bg" aria-hidden>
@@ -77,55 +61,21 @@ export default function AdminLoginPage() {
 
           <div className="admin-login-form-col">
             <div className="admin-login-form-head">
-              <h1 className="admin-login-form-title">Admin</h1>
+              <h1 className="admin-login-form-title">Admin login</h1>
               <p className="admin-login-form-lead">Sign in with your administrator credentials.</p>
             </div>
-
-            <form className="admin-login-form" onSubmit={handleSubmit} noValidate>
-              <div className="admin-login-field">
-                <label className="admin-login-label" htmlFor="admin-email">
-                  Email
-                </label>
-                <input
-                  id="admin-email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="admin-login-input"
-                  placeholder="you@organization.com"
-                />
-              </div>
-              <div className="admin-login-field">
-                <label className="admin-login-label" htmlFor="admin-password">
-                  Password
-                </label>
-                <input
-                  id="admin-password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="admin-login-input"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              {message ? (
-                <p className="admin-login-error" role="alert">
-                  {message}
-                </p>
-              ) : null}
-
-              <button type="submit" className="admin-login-submit" disabled={loading}>
-                {loading ? "Signing in…" : "Continue"}
-              </button>
-            </form>
+            <AdminLoginForm />
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<AdminLoginFallback />}>
+      <AdminLoginInner />
+    </Suspense>
   );
 }

@@ -51,6 +51,28 @@ export function withNormalizedNewsPosts(site: SiteContent): SiteContent {
   return { ...site, newsPosts: normalizeNewsPosts(site.newsPosts) };
 }
 
+/** Legacy hero elite card copy — replaced by tagline under the title. */
+function withMigratedEliteCardCopy(site: SiteContent): SiteContent {
+  const legacyBodies = [
+    "Technical drills, match intelligence, and conditioning aligned with modern football standards.",
+    "Words from football's greatest — motivation for every young Lion."
+  ];
+  const body = site.homeEliteBody?.trim() ?? "";
+  const title = site.homeEliteTitle?.trim() ?? "";
+  let homeEliteTitle = title || "Elite Training";
+  let homeEliteBody = body || "Inspired by Greatness";
+
+  if (legacyBodies.includes(body)) {
+    homeEliteBody = "Inspired by Greatness";
+  }
+  if (title === "Game of Discipline") {
+    homeEliteTitle = "Elite Training";
+    homeEliteBody = "Inspired by Greatness";
+  }
+
+  return { ...site, homeEliteTitle, homeEliteBody };
+}
+
 /** Merge JSON from DB or API onto code defaults (same rules as disk merge). */
 export function mergeStoredSiteContent(stored: Partial<SiteContent> | null | undefined): SiteContent {
   const base = buildDefaultSiteContent();
@@ -90,8 +112,10 @@ export function mergeStoredSiteContent(stored: Partial<SiteContent> | null | und
       ]
     };
   }
-  return withNormalizedPitchLocations(
-    withNormalizedGallery(withNormalizedNewsPosts(withLogoOnlyHeroImages(merged, base)))
+  return withMigratedEliteCardCopy(
+    withNormalizedPitchLocations(
+      withNormalizedGallery(withNormalizedNewsPosts(withLogoOnlyHeroImages(merged, base)))
+    )
   );
 }
 
@@ -142,8 +166,10 @@ export function mergeSiteContentFromDisk(defaults: SiteContent): SiteContent {
         ]
       };
     }
-    return withNormalizedPitchLocations(
-      withNormalizedGallery(withNormalizedNewsPosts(withLogoOnlyHeroImages(merged, defaults)))
+    return withMigratedEliteCardCopy(
+      withNormalizedPitchLocations(
+        withNormalizedGallery(withNormalizedNewsPosts(withLogoOnlyHeroImages(merged, defaults)))
+      )
     );
   } catch {
     return cloneSiteContent(defaults);

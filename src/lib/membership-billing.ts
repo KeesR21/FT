@@ -1,11 +1,17 @@
-import { differenceInCalendarDays, format, isValid, parseISO, startOfDay } from "date-fns";
-import type { Player } from "@/lib/types";
+import { addDays, differenceInCalendarDays, format, isValid, parseISO, startOfDay } from "date-fns";
+import type { Payment, Player } from "@/lib/types";
 
 /** Days before membership end when we treat as “expiring soon” (UI + subscription status). */
 export const MEMBERSHIP_EXPIRING_SOON_DAYS = 3;
 
 /** Cron / email reminders: days-left values that trigger a reminder. */
 export const MEMBERSHIP_REMINDER_DAYS_LEFT = [MEMBERSHIP_EXPIRING_SOON_DAYS, 1, 0] as const;
+
+/** Length of one paid monthly membership term, in days. Single source of truth. */
+export const MEMBERSHIP_PERIOD_DAYS = 30;
+
+/** A player whose subscription has been overdue strictly more than this many days is flagged as Danger. */
+export const DANGER_DAYS_OVERDUE = 5;
 
 export type MembershipLifecyclePhase =
   | "registration_fee_pending"
@@ -82,6 +88,109 @@ export function membershipEndedMessage(subscriptionValidUntil: string | undefine
   const monthLabel = format(end, "LLLL yyyy");
   const dateLabel = format(end, "PPP");
   return `Membership for ${monthLabel} ended on ${dateLabel}.`;
+}
+
+/**
+ * Number of whole calendar days the player is past their subscription end date.
+ * - Returns 0 when the subscription is still current (or unknown).
+ * - Used for the Danger flag (`isPlayerInDanger`) and overdue-aging displays.
+ */
+export function daysSinceSubscriptionEnded(
+  subscriptionValidUntil: string | undefined,
+  now: Date = new Date()
+): number {
+  if (!subscriptionValidUntil) return 0;
+  const end = parseISO(subscriptionValidUntil);
+  if (!isValid(end)) return 0;
+  const diff = differenceInCalendarDays(startOfDay(now), startOfDay(end));
+  return diff > 0 ? diff : 0;
+}
+
+/**
+ * A player is in Danger when their monthly membership ended strictly more than
+ * `DANGER_DAYS_OVERDUE` days ago AND they have not been withdrawn. Pending applicants
+ * never qualify because they don’t yet have a subscription window.
+ */
+export function isPlayerInDanger(player: Player, now: Date = new Date()): boolean {
+  if (player.status === "withdrawn") return false;
+  if (player.registrationStatus !== "approved") return false;
+  return daysSinceSubscriptionEnded(player.subscriptionValidUntil, now) > DANGER_DAYS_OVERDUE;
+}
+
+/**
+ * Compute the next monthly membership window when admitting / renewing.
+ *
+ * Rule (per business spec):
+ * - First-ever monthly payment OR no prior subscription → start = `paidAt`.
+ * - Late renewal after expiry → start = previous subscription end date.
+ * - Early renewal while still active → start = previous end (no gap, no overlap).
+ *
+ * End is always start + {@link MEMBERSHIP_PERIOD_DAYS}.
+ * Both fields are returned as ISO timestamps so the caller can persist or display.
+ */
+export function computeMonthlyMembershipWindow(input: {
+  paidAt: string;
+  priorValidUntil?: string | null;
+}): { startsAt: string; endsAt: string } {
+  const paid = parseISO(input.paidAt);
+  const paidDate = isValid(paid) ? paid : new Date();
+  let start = paidDate;
+  if (input.priorValidUntil) {
+    const prior = parseISO(input.priorValidUntil);
+    if (isValid(prior)) start = prior;
+  }
+  const end = addDays(start, MEMBERSHIP_PERIOD_DAYS);
+  return { startsAt: start.toISOString(), endsAt: end.toISOString() };
+}
+
+/**
+ * Project the membership window for a not-yet-paid monthly invoice (used in the
+ * Approvals UI so admins can preview which month, start and end the player will get
+ * once they pay). For unpaid renewals we honour prior end; otherwise the start defaults
+ * to today so the preview is honest.
+ */
+export function projectUpcomingMembershipWindow(
+  player: Player,
+  now: Date = new Date()
+): { startsAt: string; endsAt: string } {
+  return computeMonthlyMembershipWindow({
+    paidAt: now.toISOString(),
+    priorValidUntil: player.subscriptionValidUntil ?? null
+  });
+}
+
+/** Whether the player still has time on their current membership and is not yet eligible to renew. */
+export function isWithinActiveMembership(
+  player: Player,
+  now: Date = new Date()
+): boolean {
+  if (!player.subscriptionValidUntil) return false;
+  const end = parseISO(player.subscriptionValidUntil);
+  if (!isValid(end)) return false;
+  return differenceInCalendarDays(startOfDay(end), startOfDay(now)) > MEMBERSHIP_EXPIRING_SOON_DAYS;
+}
+
+/** Marker prefix written to `paymentNotes` when an admin voids an invoice. */
+export const VOIDED_NOTE_PREFIX = "[VOIDED";
+
+/** True when the invoice has been voided by an admin and should be ignored by guards. */
+export function isVoidedInvoice(payment: Pick<Payment, "paymentNotes">): boolean {
+  return Boolean(payment.paymentNotes?.startsWith(VOIDED_NOTE_PREFIX));
+}
+
+/**
+ * Returns the open (un-paid, non-voided) monthly invoice for the player, if any.
+ * Used as a duplicate guard before creating new monthly invoices.
+ */
+export function findOpenMonthlyInvoice(payments: Payment[]): Payment | null {
+  return (
+    payments.find(
+      (p) =>
+        p.status !== "paid" &&
+        !isVoidedInvoice(p) &&
+        /\bmonthly\b|\bmembership\b/i.test(p.paymentFor)
+    ) ?? null
+  );
 }
 
 export function membershipPrimaryStatusLabel(phase: MembershipLifecyclePhase): string {

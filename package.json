@@ -28,6 +28,7 @@
     "db:migrate:registration-profile": "node scripts/apply-registration-profile-migration.cjs",
     "db:compose:up": "docker compose up -d",
     "db:compose:down": "docker compose down",
+    "db:clean:local": "node scripts/clean-local-testing-data.cjs",
     "env:init": "node scripts/init-local-env.cjs",
     "build:nationalities": "node scripts/build-nationality-allowlist.mjs"
   },
@@ -43,6 +44,7 @@
     "@tiptap/starter-kit": "^3.22.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "html-to-image": "^1.11.13",
     "isomorphic-dompurify": "^3.8.0",
     "leaflet": "^1.9.4",
     "next": "^15.3.0",

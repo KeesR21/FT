@@ -78,3 +78,28 @@ export async function updateInvoiceLogPaymentId(
   return hit;
 }
 
+/** Wipe every invoice log and the generated PDFs alongside them. Used by the admin "wipe players" tool. */
+export async function clearInvoiceLogs(): Promise<{ removedPdfs: number }> {
+  const empty: InvoiceLogFile = { entries: [] };
+  await mkdir(INVOICE_DIR, { recursive: true });
+  await writeFile(LOG_FILE, JSON.stringify(empty, null, 2), "utf8");
+  let removedPdfs = 0;
+  try {
+    const { readdir, unlink } = await import("fs/promises");
+    const entries = await readdir(INVOICE_DIR);
+    for (const name of entries) {
+      if (/\.pdf$/i.test(name)) {
+        try {
+          await unlink(path.join(INVOICE_DIR, name));
+          removedPdfs += 1;
+        } catch {
+          /* best effort */
+        }
+      }
+    }
+  } catch {
+    /* directory may be missing or empty */
+  }
+  return { removedPdfs };
+}
+

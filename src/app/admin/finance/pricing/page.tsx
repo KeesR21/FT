@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, formatAdminApiMessage, parseAdminApiBody } from "@/lib/admin-api-fetch";
+import { formatNetworkError } from "@/lib/api-error";
 import { AGE_GROUPS } from "@/lib/age-groups";
+import { SystemNotice } from "@/components/system/system-notice";
 import { formatAcademyMoney } from "@/lib/finance-format";
 
 type GroupFee = {
@@ -110,17 +112,12 @@ export default function FinancePricingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      const text = await r.text();
-      let data: Record<string, unknown> = {};
-      try {
-        data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-      } catch {
-        data = { message: text.slice(0, 280) };
-      }
-      if (!r.ok) {
-        setErr(String(data?.message || `Update failed (${r.status})`));
+      const parsed = await parseAdminApiBody<Record<string, unknown>>(r);
+      if (!parsed.ok) {
+        setErr(parsed.message);
         return;
       }
+      const data = parsed.data;
       setNotice(String(data?.message || "Updated."));
       const next = data?.pricing as PricingState | undefined;
       if (next) {
@@ -131,7 +128,7 @@ export default function FinancePricingPage() {
         setDefaultDraft(String(next.defaultMonthlyFee.amount));
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Update failed.");
+      setErr(formatNetworkError(e, "admin"));
     } finally {
       setBusy(null);
     }
@@ -191,12 +188,8 @@ export default function FinancePricingPage() {
         </p>
       </header>
 
-      {err ? <p className="form-message">{err}</p> : null}
-      {notice ? (
-        <div className="finance-toast finance-toast--ok" role="status">
-          <p className="finance-toast__text">{notice}</p>
-        </div>
-      ) : null}
+      {err ? <SystemNotice variant="error">{err}</SystemNotice> : null}
+      {notice ? <SystemNotice variant="success">{notice}</SystemNotice> : null}
 
       <div className="card finance-panel">
         <div className="finance-panel__head">
@@ -414,6 +407,79 @@ export default function FinancePricingPage() {
           </button>
         </div>
       </div>
+
+      <DangerZoneCard onDone={(msg) => setNotice(msg)} onError={(msg) => setErr(msg)} />
     </section>
+  );
+}
+
+function DangerZoneCard({
+  onDone,
+  onError
+}: {
+  onDone: (m: string) => void;
+  onError: (m: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function wipe() {
+    const typed = window.prompt(
+      "This will permanently remove ALL players, parents, payments, messages, performance entries and invoice PDFs.\n\n" +
+        "Timetable, CMS, and pricing are preserved.\n\n" +
+        "Type WIPE to confirm:"
+    );
+    if (typed !== "WIPE") {
+      onError("Wipe cancelled — confirmation text did not match.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await adminApiFetch("/api/admin/dev/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "WIPE_ALL_PLAYERS" })
+      });
+      const json = (await r.json().catch(() => ({}))) as {
+        message?: string;
+        cleared?: { players?: number; parents?: number; payments?: number; invoicePdfs?: number };
+      };
+      if (!r.ok) {
+        throw new Error(formatAdminApiMessage(r.status, json.message));
+      }
+      const c = json.cleared ?? {};
+      onDone(
+        `${json.message ?? "Wipe complete."} Cleared ${c.players ?? 0} players, ${c.parents ?? 0} parents, ${
+          c.payments ?? 0
+        } payments, ${c.invoicePdfs ?? 0} invoice PDFs.`
+      );
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="card finance-panel" style={{ borderColor: "rgba(220,38,38,0.45)" }}>
+      <div className="finance-panel__header">
+        <div>
+          <h2 className="finance-panel__title">Danger zone — reset test data</h2>
+          <p className="muted finance-panel__lead">
+            For testing only. Removes every player, parent, payment, message, performance entry and
+            invoice PDF in one go. Timetable, CMS content, and the pricing settings on this page are
+            kept intact. There is no undo.
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        className="btn admin-btn-sm finance-void-btn"
+        disabled={busy}
+        aria-busy={busy || undefined}
+        onClick={() => void wipe()}
+      >
+        {busy ? "Wiping…" : "Wipe all players & payments"}
+      </button>
+    </div>
   );
 }

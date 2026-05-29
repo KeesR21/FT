@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, readAdminApiError } from "@/lib/admin-api-fetch";
+import type { AdminOverviewRefreshDetail } from "@/lib/admin-client-events";
 import { useAdminOverviewRefresh } from "@/lib/use-admin-overview-refresh";
 import { formatAcademyMoney } from "@/lib/finance-format";
 
@@ -29,17 +30,20 @@ export default function FinanceReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErr("");
+  const load = useCallback(async (detail?: AdminOverviewRefreshDetail) => {
+    const silent = Boolean(detail?.silent);
+    if (!silent) {
+      setLoading(true);
+      setErr("");
+    }
     try {
       const r = await adminApiFetch("/api/admin/reports");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw new Error(await readAdminApiError(r));
       setData(await r.json());
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed");
+      if (!silent) setErr(e instanceof Error ? e.message : "Failed");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 

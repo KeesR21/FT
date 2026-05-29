@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { adminApiFetch } from "@/lib/admin-api-fetch";
+import { adminApiFetch, parseAdminApiBody, readAdminApiError } from "@/lib/admin-api-fetch";
+import { formatNetworkError } from "@/lib/api-error";
 import { AUDIT_MODULE_IDS, type AuditModuleId, type AuditRunResult } from "@/lib/audit/types";
 
 type HistoryItem = {
@@ -99,12 +100,12 @@ export default function SystemAuditPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ modules: allSelected || modules.length === 0 ? undefined : modules })
       });
-      const t = await r.text();
-      if (!r.ok) {
-        setErr(t || "Audit failed");
+      const parsed = await parseAdminApiBody<{ result: AuditRunResult & { storedId?: string } }>(r);
+      if (!parsed.ok) {
+        setErr(parsed.message);
         return;
       }
-      const data = JSON.parse(t) as { result: AuditRunResult & { storedId?: string } };
+      const data = parsed.data;
       setLast(data.result);
       if (data.result.error) {
         setMsg("Audit completed with errors (see result).");
@@ -113,7 +114,7 @@ export default function SystemAuditPage() {
       }
       await loadHistory();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Request failed");
+      setErr(formatNetworkError(e, "admin"));
     } finally {
       setBusy(false);
     }

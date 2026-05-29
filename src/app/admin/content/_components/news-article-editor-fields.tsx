@@ -1,6 +1,6 @@
 "use client";
 
-import { CmsAlert, CmsImageField } from "./cms-shared";
+import { CmsAlert, CmsDraftSwitch, CmsImageField, CmsStatusBadge } from "./cms-shared";
 import { NewsRichEditor } from "./news-rich-editor";
 import type { NewsArticleFormState } from "../_lib/news-article-form-state";
 import { excerptPreviewFromFormState } from "../_lib/news-article-form-state";
@@ -24,6 +24,21 @@ export function NewsArticleEditorFields({
 }: Props) {
   return (
     <div className="cms-news-article-fields">
+      {/* Status banner */}
+      <div className="cms-news-article-fields__status-row">
+        <CmsDraftSwitch
+          value={value.status ?? "published"}
+          onChange={(s) => onChange({ ...value, status: s })}
+          disabled={disabled}
+        />
+        <CmsStatusBadge
+          status={value.status === "draft" ? "draft"
+            : value.publishedLocal && new Date(value.publishedLocal) > new Date()
+              ? "scheduled"
+              : "published"}
+        />
+      </div>
+
       {issues.length > 0 ? (
         <CmsAlert variant="warning" title="Fix the following">
           <ul>

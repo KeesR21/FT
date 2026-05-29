@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Locations",
+  title: "Pitch locations",
   description: "Training sites and maps — FTPR Lions Academy pitch locations."
 };
 
@@ -18,7 +18,7 @@ export default async function LocationsPage() {
 
   return (
     <>
-      <section className="schedule-landing-hero ks-full-bleed" aria-label="Locations hero">
+      <section className="schedule-landing-hero ks-full-bleed" aria-label="Pitch locations hero">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={DEFAULT_LOCATIONS_HERO} alt="" className="schedule-landing-hero__bg" decoding="async" />
         <div className="schedule-landing-hero__overlay" aria-hidden />

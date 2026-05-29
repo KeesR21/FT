@@ -15,6 +15,8 @@ export type NewsArticleFormState = {
   publishedLocal: string;
   dateDisplay: string;
   author: string;
+  /** `draft` hides the article from the public site. */
+  status: "draft" | "published";
 };
 
 export function emptyNewsArticleFormState(): NewsArticleFormState {
@@ -26,7 +28,8 @@ export function emptyNewsArticleFormState(): NewsArticleFormState {
     image: "/academy-1.png",
     publishedLocal: toDatetimeLocalValue(iso),
     dateDisplay: formatNewsDisplayDateFromIso(iso),
-    author: ""
+    author: "",
+    status: "draft"
   };
 }
 
@@ -39,7 +42,8 @@ export function formStateFromNewsPost(p: CmsNewsPost): NewsArticleFormState {
     image: p.image,
     publishedLocal: toDatetimeLocalValue(norm.publishedAt ?? new Date().toISOString()),
     dateDisplay: p.date,
-    author: p.author ?? ""
+    author: p.author ?? "",
+    status: p.status ?? "published"
   };
 }
 
@@ -52,6 +56,7 @@ export function newsPostFromFormState(s: NewsArticleFormState): CmsNewsPost {
     image: s.image.trim(),
     date: s.dateDisplay.trim(),
     publishedAt,
+    status: s.status,
     ...(s.author.trim() ? { author: s.author.trim() } : {})
   };
 }
