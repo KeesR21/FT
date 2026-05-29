@@ -10,7 +10,7 @@ const schema = z.object({
   message: z.string().trim().min(10, "Message must be at least 10 characters.").max(3000)
 });
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? process.env.ADMIN_EMAIL ?? "admin@ftprlions.com";
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? process.env.ADMIN_EMAIL ?? "info@ftprlionsacademy.com";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"]/g, (c) =>

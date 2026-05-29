@@ -43,10 +43,10 @@ export default function Footer() {
             <address className="site-footer__address">
               <p>Kigali, Rwanda</p>
               <p>
-                <a href="mailto:info@ftprlions.com">info@ftprlions.com</a>
+                <a href="mailto:info@ftprlionsacademy.com">info@ftprlionsacademy.com</a>
               </p>
               <p>
-                <a href="tel:+250780000000">+250 780 000 000</a>
+                <a href="tel:+250788614755">+250 788 614 755</a>
               </p>
             </address>
             <p className="site-footer__hours muted">Mon – Fri, 09:00 – 17:00</p>

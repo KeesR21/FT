@@ -6,7 +6,7 @@ export function buildDefaultSiteContent(): SiteContent {
   return {
   academyInfo:
     "FTPR Lions combines professional coaching with player welfare across age groups U7–U18.",
-  contactBlurb: "Reach us at info@ftprlions.com or +250 780 000 000 for enrolment queries.",
+  contactBlurb: "Reach us at info@ftprlionsacademy.com or +250 788 614 755 for enrolment queries.",
   homeWelcomePill: "Welcome to FTPR Lions",
   homeHeroHeading: "THE JOURNEY TO GREATNESS STARTS HERE",
   homeHeroImage: "/gallery/FTPR_49.JPG",
