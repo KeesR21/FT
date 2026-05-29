@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, stat, writeFile } from "fs/promises";
 import path from "path";
 import { randomBytes, randomUUID } from "crypto";
 import { parentEmailMatchKey } from "@/lib/portal-linked-players";
@@ -31,20 +31,75 @@ export type CreateAccountInput = {
 const DIR = path.join(process.cwd(), "public", "uploads", "parent-accounts");
 const FILE = path.join(DIR, "accounts.json");
 
+// ---------------------------------------------------------------------------
+// In-process cache — avoids reading the full accounts file on every portal
+// API request (session check, auth middleware, etc.).
+// Invalidated on every write; TTL is a safety net for stale-process scenarios.
+// ---------------------------------------------------------------------------
+const CACHE_TTL_MS = 5_000;
+type CacheEntry = { accounts: ParentAccount[]; ts: number; mtime: number };
+let _cache: CacheEntry | null = null;
+
+function cacheGet(): ParentAccount[] | null {
+  if (!_cache) return null;
+  if (Date.now() - _cache.ts > CACHE_TTL_MS) return null;
+  return _cache.accounts;
+}
+
+function cacheSet(accounts: ParentAccount[], mtime: number): void {
+  _cache = { accounts, ts: Date.now(), mtime };
+}
+
+function cacheInvalidate(): void {
+  _cache = null;
+}
+
+// ---------------------------------------------------------------------------
+// Activity-touch debouncing — calling updateAccount on every portal page/API
+// request writes the whole accounts JSON to disk each time. Debounce to at
+// most once per TOUCH_DEBOUNCE_MS per account.
+// ---------------------------------------------------------------------------
+const TOUCH_DEBOUNCE_MS = 60_000; // 1 minute
+const _lastTouchByAccount = new Map<string, number>();
+
+// ---------------------------------------------------------------------------
+
 async function ensureFile(): Promise<ParentAccount[]> {
+  const cached = cacheGet();
+  if (cached) return cached;
+
   await mkdir(DIR, { recursive: true });
   try {
+    let mtime = 0;
+    try {
+      const s = await stat(FILE);
+      mtime = s.mtimeMs;
+      if (_cache && _cache.mtime === mtime) {
+        cacheSet(_cache.accounts, mtime);
+        return _cache.accounts;
+      }
+    } catch { /* file may not exist yet */ }
+
     const raw = await readFile(FILE, "utf8");
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((a): a is ParentAccount => Boolean(a && typeof a === "object" && a.id && a.emailLower));
-  } catch {
-    await writeFile(FILE, "[]", "utf8");
+    const accounts = Array.isArray(parsed)
+      ? parsed.filter((a): a is ParentAccount => Boolean(a && typeof a === "object" && a.id && a.emailLower))
+      : [];
+    cacheSet(accounts, mtime);
+    return accounts;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      try {
+        await writeFile(FILE, "[]", "utf8");
+        cacheSet([], 0);
+      } catch { /* ignore */ }
+    }
     return [];
   }
 }
 
 async function writeStore(items: ParentAccount[]): Promise<void> {
+  cacheInvalidate();
   await mkdir(DIR, { recursive: true });
   await writeFile(FILE, JSON.stringify(items, null, 2), "utf8");
 }
@@ -114,6 +169,7 @@ export async function updateAccount(
 export async function rotateSessionToken(id: string): Promise<{ account: ParentAccount; token: string } | null> {
   const token = randomBytes(32).toString("hex");
   const now = new Date().toISOString();
+  _lastTouchByAccount.set(id, Date.now()); // Reset debounce after login.
   const updated = await updateAccount(id, {
     sessionToken: token,
     lastLoginAt: now,
@@ -124,11 +180,21 @@ export async function rotateSessionToken(id: string): Promise<{ account: ParentA
 }
 
 export async function clearSessionToken(id: string): Promise<void> {
+  _lastTouchByAccount.delete(id);
   await updateAccount(id, { sessionToken: undefined, sessionLastActivityAt: undefined });
 }
 
+/**
+ * Update portal session last-activity timestamp. Debounced to at most one
+ * disk write per {@link TOUCH_DEBOUNCE_MS} per account so that every portal
+ * page load doesn't rewrite the full accounts file to disk.
+ */
 export async function touchPortalAccountActivity(accountId: string): Promise<void> {
-  await updateAccount(accountId, { sessionLastActivityAt: new Date().toISOString() });
+  const now = Date.now();
+  const last = _lastTouchByAccount.get(accountId) ?? 0;
+  if (now - last < TOUCH_DEBOUNCE_MS) return; // Debounce: skip write.
+  _lastTouchByAccount.set(accountId, now);
+  await updateAccount(accountId, { sessionLastActivityAt: new Date(now).toISOString() });
 }
 
 /** Default 7 days idle for parents (minutes). */

@@ -1407,14 +1407,14 @@ export function AdminWeeklySchedule() {
                 min={format(
                   new Date(
                     Math.max(
-                      parseISO(`${detail.week.weekStart}T00:00:00`).getTime(),
+                      parseISO(`${detail?.week.weekStart ?? "2000-01-01"}T00:00:00`).getTime(),
                       new Date().setHours(0, 0, 0, 0)
                     )
                   ),
                   "yyyy-MM-dd"
                 )}
                 max={format(
-                  addDays(parseISO(`${detail.week.weekStart}T00:00:00`), 6),
+                  addDays(parseISO(`${detail?.week.weekStart ?? "2000-01-01"}T00:00:00`), 6),
                   "yyyy-MM-dd"
                 )}
                 onChange={(e) => {

@@ -5,6 +5,7 @@ import type { SiteContent } from "@/lib/types";
 import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { revalidatePublicSite } from "@/lib/revalidate-public";
+import { forceSyncTeamCoachesFromCms } from "@/lib/weekly-schedule/sync-team-coaches";
 import { jsonMessage } from "@/lib/utils";
 
 const highlightItem = z.object({ id: z.string(), title: z.string(), body: z.string() });
@@ -308,6 +309,11 @@ export async function PATCH(req: Request) {
   }
   if (Object.keys(patch).length > 0) {
     await db.updateSiteContent(patch);
+    // When the team roster changes, immediately re-sync the schedule coach store
+    // so that new/removed coaches are reflected without waiting for the cooldown.
+    if (patch.teamMembers) {
+      void forceSyncTeamCoachesFromCms();
+    }
   }
 
   revalidatePublicSite();

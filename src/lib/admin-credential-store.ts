@@ -1,6 +1,7 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, stat, writeFile } from "fs/promises";
 import path from "path";
 import { randomBytes } from "crypto";
+
 /** Single configured academy admin credentials (persisted hashed password). */
 export type AdminCredentialsRecord = {
   emailLower: string;
@@ -24,29 +25,75 @@ function emptyShape(): FileShape {
   return { credentials: null };
 }
 
-export function getConfiguredAdminEmailLower(): string {
-  return (process.env.ADMIN_EMAIL ?? "admin@ftprlions.com").trim().toLowerCase();
+// ---------------------------------------------------------------------------
+// In-process cache — avoids hitting the filesystem on every API request.
+// The cache is invalidated on every write so reads are always consistent.
+// TTL is a safety net for multi-instance deployments or stale mtime reads.
+// ---------------------------------------------------------------------------
+const CACHE_TTL_MS = 5_000; // 5 seconds max staleness
+type CacheEntry = { shape: FileShape; ts: number; mtime: number };
+let _cache: CacheEntry | null = null;
+
+function cacheGet(): FileShape | null {
+  if (!_cache) return null;
+  if (Date.now() - _cache.ts > CACHE_TTL_MS) return null;
+  return _cache.shape;
 }
 
-function legacyPlaintextPassword(): string {
-  return process.env.ADMIN_PASSWORD ?? "admin123";
+function cacheSet(shape: FileShape, mtime: number): void {
+  _cache = { shape, ts: Date.now(), mtime };
 }
+
+function cacheInvalidate(): void {
+  _cache = null;
+}
+
+// ---------------------------------------------------------------------------
+// Activity-touch debouncing — writing to disk on every authenticated request
+// was the main source of slowness and OneDrive lock contention. We now write
+// at most once per TOUCH_DEBOUNCE_MS when the session is active.
+// ---------------------------------------------------------------------------
+const TOUCH_DEBOUNCE_MS = 60_000; // 1 minute
+let _lastTouchMs = 0;
+
+// ---------------------------------------------------------------------------
 
 async function ensureRead(): Promise<FileShape> {
+  // 1. Serve from in-process cache when fresh.
+  const cached = cacheGet();
+  if (cached) return cached;
+
   await mkdir(DIR, { recursive: true });
   try {
+    // Check mtime first — only read if file changed since last cache fill.
+    let mtime = 0;
+    try {
+      const s = await stat(FILE);
+      mtime = s.mtimeMs;
+      if (_cache && _cache.mtime === mtime) {
+        // File unchanged — refresh TTL and return.
+        cacheSet(_cache.shape, mtime);
+        return _cache.shape;
+      }
+    } catch { /* file may not exist yet */ }
+
     const raw = await readFile(FILE, "utf8");
     const parsed = JSON.parse(raw) as FileShape;
-    if (!parsed || typeof parsed !== "object") return emptyShape();
-    if (parsed.credentials && typeof parsed.credentials === "object") return parsed;
-    return emptyShape();
+    const shape =
+      parsed && typeof parsed === "object" && parsed.credentials && typeof parsed.credentials === "object"
+        ? parsed
+        : emptyShape();
+    cacheSet(shape, mtime);
+    return shape;
   } catch (err) {
     // Only initialise the file when it genuinely does not exist yet.
     // Do NOT overwrite on transient I/O errors (e.g. file locked by OneDrive
     // or another process) — that would silently wipe a valid session token.
     if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      const empty = emptyShape();
       try {
-        await writeFile(FILE, JSON.stringify(emptyShape(), null, 2), "utf8");
+        await writeFile(FILE, JSON.stringify(empty, null, 2), "utf8");
+        cacheSet(empty, 0);
       } catch { /* ignore — directory may not be ready yet */ }
     }
     return emptyShape();
@@ -54,8 +101,17 @@ async function ensureRead(): Promise<FileShape> {
 }
 
 async function writeShape(shape: FileShape): Promise<void> {
+  cacheInvalidate(); // Invalidate before write so next read is fresh.
   await mkdir(DIR, { recursive: true });
   await writeFile(FILE, JSON.stringify(shape, null, 2), "utf8");
+}
+
+export function getConfiguredAdminEmailLower(): string {
+  return (process.env.ADMIN_EMAIL ?? "admin@ftprlions.com").trim().toLowerCase();
+}
+
+function legacyPlaintextPassword(): string {
+  return process.env.ADMIN_PASSWORD ?? "admin123";
 }
 
 export async function getAdminCredentials(): Promise<AdminCredentialsRecord | null> {
@@ -88,6 +144,7 @@ export async function initializeAdminCredentials(
     sessionLastActivityAt: now
   };
   await persistCredentials(rec);
+  _lastTouchMs = Date.now(); // Reset debounce after fresh credential init.
   return rec;
 }
 
@@ -107,6 +164,7 @@ export async function setAdminPasswordHashClearingSession(passwordHash: string):
     sessionLastActivityAt: undefined
   };
   await persistCredentials(record);
+  _lastTouchMs = 0;
 }
 
 export async function setAdminSessionToken(token: string): Promise<void> {
@@ -122,6 +180,7 @@ export async function rotateAdminSessionToken(): Promise<AdminCredentialsRecord 
   const now = new Date().toISOString();
   const next = { ...cur, sessionToken: tok, updatedAt: now, sessionLastActivityAt: now };
   await persistCredentials(next);
+  _lastTouchMs = Date.now();
   return next;
 }
 
@@ -134,13 +193,23 @@ export async function clearAdminSession(): Promise<void> {
     updatedAt: new Date().toISOString(),
     sessionLastActivityAt: undefined
   });
+  _lastTouchMs = 0;
 }
 
+/**
+ * Update session last-activity timestamp. Debounced to at most one disk write
+ * per {@link TOUCH_DEBOUNCE_MS} to avoid hammering the filesystem on every
+ * authenticated API request.
+ */
 export async function touchAdminSessionActivity(): Promise<void> {
+  const now = Date.now();
+  if (now - _lastTouchMs < TOUCH_DEBOUNCE_MS) return; // Debounce: skip write.
+
   const cur = await getAdminCredentials();
   if (!cur?.sessionToken) return;
-  const now = new Date().toISOString();
-  await persistCredentials({ ...cur, sessionLastActivityAt: now, updatedAt: now });
+  _lastTouchMs = now;
+  const iso = new Date(now).toISOString();
+  await persistCredentials({ ...cur, sessionLastActivityAt: iso, updatedAt: iso });
 }
 
 /** @returns true when idle past configured window (default 30 minutes). Legacy sessions without timestamp are not expired. */
