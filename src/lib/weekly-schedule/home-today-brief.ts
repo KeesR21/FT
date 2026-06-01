@@ -1,7 +1,7 @@
 import { format, isValid, parseISO } from "date-fns";
 import { sortAgeGroups } from "@/lib/age-groups";
 import { academyDateKey } from "@/lib/weekly-schedule/academy-time";
-import { weeklySchedule } from "@/lib/weekly-schedule/server";
+import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
 import type { PublicScheduleSession } from "@/lib/weekly-schedule/types";
 import { weekDateRange } from "@/lib/weekly-schedule/week-math";
 
@@ -79,7 +79,8 @@ function findPublishedScheduleForDate(dateKey: string) {
 /**
  * Brief list for the home hero card — always the academy calendar "today" (resets at 00:00 Kigali).
  */
-export function getHomeScheduleBrief(now: Date = new Date()): HomeScheduleBrief {
+export async function getHomeScheduleBrief(now: Date = new Date()): Promise<HomeScheduleBrief> {
+  await weeklyScheduleReady();
   const dayKey = academyDateKey(now);
   const displayDate = parseISO(`${dayKey}T12:00:00`);
   const dateLabel = isValid(displayDate) ? format(displayDate, "EEE d MMM yyyy") : dayKey;

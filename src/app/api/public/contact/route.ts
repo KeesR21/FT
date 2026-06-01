@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createContactSubmission } from "@/lib/contact-submissions";
 import { sendEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getRequestIp } from "@/lib/request-ip";
@@ -7,7 +8,8 @@ import { getRequestIp } from "@/lib/request-ip";
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name.").max(120),
   email: z.string().trim().email("Enter a valid email address."),
-  message: z.string().trim().min(10, "Message must be at least 10 characters.").max(3000)
+  message: z.string().trim().min(10, "Message must be at least 10 characters.").max(3000),
+  subject: z.string().trim().max(120).optional()
 });
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL ?? process.env.ADMIN_EMAIL ?? "info@ftprlionsacademy.com";
@@ -44,7 +46,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, message } = parsed.data;
+  const { name, email, message, subject } = parsed.data;
+
+  await createContactSubmission({
+    name,
+    email,
+    message,
+    enquiryType: subject
+  });
 
   const html = `
     <div style="font-family:Inter,Arial,sans-serif;color:#0f172a;max-width:600px;margin:0 auto">
@@ -52,6 +61,7 @@ export async function POST(req: Request) {
       <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
         <tr><td style="padding:6px 0;color:#475569;width:80px">From</td><td style="padding:6px 0"><strong>${escapeHtml(name)}</strong></td></tr>
         <tr><td style="padding:6px 0;color:#475569">Email</td><td style="padding:6px 0"><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></td></tr>
+        ${subject ? `<tr><td style="padding:6px 0;color:#475569">Type</td><td style="padding:6px 0">${escapeHtml(subject)}</td></tr>` : ""}
       </table>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;white-space:pre-wrap;line-height:1.6">
         ${escapeHtml(message)}
@@ -63,8 +73,9 @@ export async function POST(req: Request) {
   await sendEmail(
     CONTACT_EMAIL,
     `Contact form: ${name}`,
-    html
+    html,
+    { replyTo: email }
   );
 
-  return NextResponse.json({ message: "Message sent. We'll be in touch during office hours." });
+  return NextResponse.json({ message: "Message sent. We'll be in touch soon." });
 }

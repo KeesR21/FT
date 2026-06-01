@@ -9,12 +9,13 @@
  * syncing more often than that provides zero benefit.
  */
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
-import { weeklySchedule } from "@/lib/weekly-schedule/server";
+import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
 
 const SYNC_COOLDOWN_MS = 120_000; // 2 minutes — matches CMS cache TTL
 let _lastSyncMs = 0;
 
 export async function syncTeamCoachesFromCms(): Promise<void> {
+  await weeklyScheduleReady();
   const now = Date.now();
   if (now - _lastSyncMs < SYNC_COOLDOWN_MS) return; // Still fresh — skip.
   _lastSyncMs = now;

@@ -1,5 +1,5 @@
 import "./globals.css";
-import { ConditionalChrome } from "@/components/conditional-chrome";
+import { PublicChrome } from "@/components/public-chrome";
 import { Jost, Poppins } from "next/font/google";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
@@ -49,7 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             {children}
           </main>
         ) : (
-          <ConditionalChrome>{children}</ConditionalChrome>
+          <PublicChrome>{children}</PublicChrome>
         )}
       </body>
     </html>

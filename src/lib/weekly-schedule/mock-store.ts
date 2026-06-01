@@ -23,32 +23,12 @@ import type {
   ScheduleWeek
 } from "@/lib/weekly-schedule/types";
 import { validateSessionInput } from "@/lib/weekly-schedule/validation";
+import { schedulePersistSoon } from "@/lib/weekly-schedule/schedule-persist";
+import { weeklyScheduleStore as store } from "@/lib/weekly-schedule/store-snapshot";
 import { assertMondayDate, weekRangeLabel } from "@/lib/weekly-schedule/week-math";
 
-const GLOBAL_KEY = "__ftprWeeklyScheduleStore";
-
-type Store = {
-  coaches: ScheduleCoach[];
-  pitches: SchedulePitch[];
-  weeks: ScheduleWeek[];
-  versions: ScheduleVersion[];
-  sessions: ScheduleSession[];
-  seeded: boolean;
-};
-
-function store(): Store {
-  const g = globalThis as unknown as Record<string, Store | undefined>;
-  if (!g[GLOBAL_KEY]) {
-    g[GLOBAL_KEY] = {
-      coaches: [],
-      pitches: [],
-      weeks: [],
-      versions: [],
-      sessions: [],
-      seeded: false
-    };
-  }
-  return g[GLOBAL_KEY]!;
+function touchPersist() {
+  schedulePersistSoon();
 }
 
 function now() {
@@ -61,7 +41,7 @@ function juneSlot(day: number, hour: number, minute: number, durationMin: number
   return { startsAt: start.toISOString(), endsAt: end.toISOString() };
 }
 
-function seedDefaults() {
+export function seedWeeklyScheduleDefaults() {
   const s = store();
   if (s.seeded) return;
   const t = now();
@@ -221,7 +201,6 @@ function seedDefaults() {
   s.seeded = true;
 }
 
-seedDefaults();
 
 function getWeek(weekId: string) {
   return store().weeks.find((w) => w.id === weekId) ?? null;
@@ -281,6 +260,7 @@ export const weeklyScheduleMock = {
       updatedAt: t
     };
     store().coaches.push(coach);
+    touchPersist();
     return coach;
   },
 
@@ -290,6 +270,7 @@ export const weeklyScheduleMock = {
     if (patch.name !== undefined) c.name = patch.name.trim();
     if (patch.active !== undefined) c.active = patch.active;
     c.updatedAt = now();
+    touchPersist();
     return c;
   },
 
@@ -307,6 +288,7 @@ export const weeklyScheduleMock = {
       updatedAt: t
     };
     store().pitches.push(pitch);
+    touchPersist();
     return pitch;
   },
 
@@ -316,6 +298,7 @@ export const weeklyScheduleMock = {
     if (patch.name !== undefined) p.name = patch.name.trim();
     if (patch.active !== undefined) p.active = patch.active;
     p.updatedAt = now();
+    touchPersist();
     return p;
   },
 
@@ -363,6 +346,7 @@ export const weeklyScheduleMock = {
     };
     store().weeks.push(week);
     store().versions.push(version);
+    touchPersist();
     return { week, version };
   },
 
@@ -493,6 +477,7 @@ export const weeklyScheduleMock = {
     };
     store().sessions.push(session);
     version.updatedAt = now();
+    touchPersist();
     return session;
   },
 
@@ -530,6 +515,7 @@ export const weeklyScheduleMock = {
     };
     store().sessions[idx] = updated;
     version.updatedAt = now();
+    touchPersist();
     return updated;
   },
 
@@ -544,6 +530,7 @@ export const weeklyScheduleMock = {
     );
     if (store().sessions.length < before) {
       version.updatedAt = now();
+      touchPersist();
       return true;
     }
     return false;
@@ -585,6 +572,7 @@ export const weeklyScheduleMock = {
     version.status = "active";
     version.publishedAt = now();
     version.updatedAt = now();
+    touchPersist();
     return version;
   },
 
@@ -623,6 +611,7 @@ export const weeklyScheduleMock = {
         })
       );
     }
+    touchPersist();
     return draft;
   },
 
@@ -654,6 +643,7 @@ export const weeklyScheduleMock = {
         coach.updatedAt = t;
       }
     }
+    touchPersist();
   },
 
   discardDraft(versionId: string): boolean {
@@ -664,6 +654,7 @@ export const weeklyScheduleMock = {
     }
     store().sessions = store().sessions.filter((s) => s.versionId !== versionId);
     store().versions = store().versions.filter((v) => v.id !== versionId);
+    touchPersist();
     return true;
   },
 
@@ -674,6 +665,7 @@ export const weeklyScheduleMock = {
     store().sessions = store().sessions.filter((s) => !versionIds.includes(s.versionId));
     store().versions = store().versions.filter((v) => v.weekId !== weekId);
     store().weeks = store().weeks.filter((w) => w.id !== weekId);
+    touchPersist();
     return true;
   }
 };

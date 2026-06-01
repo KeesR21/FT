@@ -12,6 +12,7 @@ import { NewsEditor } from "../editors/news-editor";
 import { EventsEditor } from "../editors/events-editor";
 import { ProgramsEditor } from "../editors/programs-editor";
 import { ScheduleEditor } from "../editors/schedule-editor";
+import { SiteEditor } from "../editors/site-editor";
 import { TeamEditor } from "../editors/team-editor";
 
 const MAP: Record<string, ComponentType> = {
@@ -24,7 +25,8 @@ const MAP: Record<string, ComponentType> = {
   events: EventsEditor,
   gallery: GalleryEditor,
   contact: ContactEditor,
-  location: LocationEditor
+  location: LocationEditor,
+  site: SiteEditor
 };
 
 export default function AdminContentSlugPage() {

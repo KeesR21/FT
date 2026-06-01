@@ -46,9 +46,25 @@ export default async function AboutPage() {
       <div className="container page-y">
         <section className="page-stack about-landing-stack">
           <article className="card about-landing-vision">
-            <h2 className="page-section-title">{c.aboutVisionTitle}</h2>
-            <p className="about-landing-vision__text muted">{c.academyInfo}</p>
+            <h2 className="page-section-title">Mission</h2>
+            <p className="about-landing-vision__text muted">{c.aboutMission}</p>
           </article>
+          <article className="card about-landing-vision">
+            <h2 className="page-section-title">{c.aboutVisionTitle}</h2>
+            <p className="about-landing-vision__text muted">{c.aboutVision}</p>
+          </article>
+          {c.aboutHistory ? (
+            <article className="card about-landing-vision">
+              <h2 className="page-section-title">History</h2>
+              <p className="about-landing-vision__text muted">{c.aboutHistory}</p>
+            </article>
+          ) : null}
+          {c.aboutManagementMessage ? (
+            <article className="card about-landing-vision">
+              <h2 className="page-section-title">Message from management</h2>
+              <p className="about-landing-vision__text muted">{c.aboutManagementMessage}</p>
+            </article>
+          ) : null}
 
           {c.aboutGalleryItems.length > 0 ? (
             <div className="about-landing-gallery" aria-label="Academy moments">

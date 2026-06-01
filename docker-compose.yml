@@ -1,5 +1,10 @@
 # Local databases for development. Start: docker compose up -d
 #
+# MongoDB (recommended local dev):
+#   MONGODB_URI=mongodb://127.0.0.1:27017/ftpr-lions
+#   USE_MOCK_DB=false
+#   npm run db:compose:mongodb && npm run db:verify:mongodb
+#
 # MySQL (matches Hostinger):
 #   DATABASE_URL=mysql://academy:academy@127.0.0.1:3306/academy
 #   npm run db:setup:mysql
@@ -9,6 +14,20 @@
 #   npm run db:setup
 
 services:
+  mongodb:
+    image: mongo:7
+    container_name: ftpr-academy-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - ftpr_academy_mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   mysql:
     image: mysql:8.4
     container_name: ftpr-academy-mysql
@@ -47,5 +66,6 @@ services:
       retries: 5
 
 volumes:
+  ftpr_academy_mongo:
   ftpr_academy_mysql:
   ftpr_academy_pgdata:

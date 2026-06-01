@@ -55,7 +55,7 @@ export default function ContactForm() {
       const res = await fetch("/api/public/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, message: `[${subject}] ${message}` })
+        body: JSON.stringify({ name, email, subject, message })
       });
       const data = (await res.json()) as { message?: string };
       if (!res.ok) {
@@ -81,7 +81,7 @@ export default function ContactForm() {
         </svg>
         <p className="contact-form__success-heading">Message sent!</p>
         <p className="contact-form__success-text">
-          We&apos;ll get back to you within office hours. Check your inbox for a confirmation.
+          We&apos;ll get back to you soon. Check your inbox for a confirmation.
         </p>
         <button type="button" className="btn btn-secondary" onClick={() => { setStatus("idle"); setFieldErrors({}); setGlobalError(""); }}>
           Send another message

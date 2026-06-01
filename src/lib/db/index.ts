@@ -1,4 +1,6 @@
 import { wrapMockDb } from "@/lib/db/mock-async";
+import { createMongoDb } from "@/lib/db/mongo-db";
+import { isMongoConfigured } from "@/lib/db/mongo-client";
 import { createMysqlDb } from "@/lib/db/mysql-db";
 import { isMysqlConfigured } from "@/lib/db/mysql-client";
 import { createPostgresDb } from "@/lib/db/postgres-db";
@@ -11,7 +13,8 @@ import type { AppDb } from "@/lib/db/types";
 export type { AdminShellSummary, AppDb } from "@/lib/db/types";
 
 function createLiveDb(): AppDb {
-  // Priority: MySQL (Hostinger) → PostgreSQL URL → Supabase API → in-memory mock
+  // Priority: MongoDB → MySQL → PostgreSQL → Supabase → in-memory mock
+  if (isMongoConfigured()) return createMongoDb();
   if (isMysqlConfigured()) return createMysqlDb();
   if (isDirectPostgresConfigured()) return createPostgresDb();
   if (isSupabaseConfigured()) return createSupabaseDb();

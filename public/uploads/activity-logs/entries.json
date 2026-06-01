@@ -918,5 +918,20 @@
     "newValue": null,
     "id": "4b1eda40-5bee-427a-ad15-3184ba672d13",
     "ts": "2026-05-29T03:06:17.379Z"
+  },
+  {
+    "actorKind": "admin",
+    "actorId": "admin@ftprlions.com",
+    "actorLabel": "admin@ftprlions.com",
+    "action": "admin.login.success",
+    "description": "Administrator signed in",
+    "metadata": {
+      "mode": "persisted"
+    },
+    "ip": "::1",
+    "previousValue": null,
+    "newValue": null,
+    "id": "6bc27ba2-9be0-427c-b8d2-3e23b15a8aa8",
+    "ts": "2026-06-01T17:30:52.024Z"
   }
 ]

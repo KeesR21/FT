@@ -1,26 +1,32 @@
 import Link from "next/link";
 import { PublicRegistrationLink } from "@/components/public/public-registration-link";
+import { buildPageMetadata } from "@/lib/cms-seo";
+import { pageHeroFromSeo } from "@/lib/cms-seo";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
 import type { Metadata } from "next";
 import ContactForm from "./contact-form";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: "Reach FTPR Lions Academy for registration, programs, schedules, and general enquiries."
-};
-
-const DEFAULT_CONTACT_HERO = "/gallery/FTPR_25.JPG";
+export async function generateMetadata(): Promise<Metadata> {
+  const c = await getCachedSiteContent();
+  return buildPageMetadata(c, "contact", {
+    title: "Contact",
+    description: "Reach FTPR Lions Academy for registration, programs, schedules, and general enquiries."
+  });
+}
 
 export default async function ContactPage() {
   const c = await getCachedSiteContent();
+  const heroSrc = pageHeroFromSeo(c, "contact", c.contactHeroImage?.trim() || "/gallery/FTPR_25.JPG");
+  const primaryEmail = c.contactInfo?.emails[0]?.address;
+  const primaryPhone = c.contactInfo?.phones[0]?.number;
 
   return (
     <>
       <section className="schedule-landing-hero ks-full-bleed" aria-label="Contact hero">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={DEFAULT_CONTACT_HERO} alt="" className="schedule-landing-hero__bg" decoding="async" />
+        <img src={heroSrc} alt="" className="schedule-landing-hero__bg" decoding="async" />
         <div className="schedule-landing-hero__overlay" aria-hidden />
         <div className="schedule-landing-hero__inner container">
           <span className="schedule-landing-hero__pill">Get in touch</span>
@@ -40,7 +46,7 @@ export default async function ContactPage() {
           <article className="card schedule-timeline-head contact-page-intro">
             <h2 className="page-section-title">How to reach us</h2>
             <p className="muted schedule-timeline-head__lead">
-              Office details and a quick form — we reply during published hours.
+              Contact details and a quick form — we&apos;ll get back to you as soon as we can.
             </p>
           </article>
 
@@ -51,7 +57,16 @@ export default async function ContactPage() {
               <p className="events-page-card__summary" style={{ whiteSpace: "pre-wrap" }}>
                 {c.contactBlurb}
               </p>
-              <p className="contact-page-card__hours muted">{c.contactOfficeHours}</p>
+              {primaryEmail ? (
+                <p className="muted">
+                  <a href={`mailto:${primaryEmail}`}>{primaryEmail}</a>
+                </p>
+              ) : null}
+              {primaryPhone ? (
+                <p className="muted">
+                  <a href={`tel:${primaryPhone.replace(/\s/g, "")}`}>{primaryPhone}</a>
+                </p>
+              ) : null}
             </div>
           </article>
 
@@ -60,7 +75,7 @@ export default async function ContactPage() {
               <p className="events-page-card__meta">Message</p>
               <h3 className="events-page-card__title">Quick contact form</h3>
               <p className="contact-form__intro muted">
-                Send a note — we&apos;ll reply during office hours.
+                Send a note — we&apos;ll reply as soon as we can.
               </p>
               <ContactForm />
             </div>

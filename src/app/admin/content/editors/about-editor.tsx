@@ -50,6 +50,10 @@ export function AboutEditor() {
   const [aboutPageTitle, setAboutPageTitle] = useState("");
   const [aboutHeroImage, setAboutHeroImage] = useState("");
   const [aboutPageLead, setAboutPageLead] = useState("");
+  const [aboutMission, setAboutMission] = useState("");
+  const [aboutVision, setAboutVision] = useState("");
+  const [aboutHistory, setAboutHistory] = useState("");
+  const [aboutManagementMessage, setAboutManagementMessage] = useState("");
   const [aboutVisionTitle, setAboutVisionTitle] = useState("");
   const [academyInfo, setAcademyInfo] = useState("");
   const [aboutGalleryItems, setAboutGalleryItems] = useState<SiteContent["aboutGalleryItems"]>([]);
@@ -66,6 +70,10 @@ export function AboutEditor() {
     setAboutPageTitle(c.aboutPageTitle);
     setAboutHeroImage(c.aboutHeroImage ?? "");
     setAboutPageLead(c.aboutPageLead);
+    setAboutMission(c.aboutMission);
+    setAboutVision(c.aboutVision);
+    setAboutHistory(c.aboutHistory);
+    setAboutManagementMessage(c.aboutManagementMessage);
     setAboutVisionTitle(c.aboutVisionTitle);
     setAcademyInfo(c.academyInfo);
     setAboutGalleryItems(c.aboutGalleryItems.map((x) => ({ ...x })));
@@ -145,6 +153,10 @@ export function AboutEditor() {
       aboutPageTitle,
       aboutHeroImage: aboutHeroImage.trim() || undefined,
       aboutPageLead,
+      aboutMission,
+      aboutVision,
+      aboutHistory,
+      aboutManagementMessage,
       aboutVisionTitle,
       academyInfo,
       aboutGalleryItems,
@@ -161,6 +173,10 @@ export function AboutEditor() {
       aboutPageTitle,
       aboutHeroImage,
       aboutPageLead,
+      aboutMission,
+      aboutVision,
+      aboutHistory,
+      aboutManagementMessage,
       aboutVisionTitle,
       academyInfo,
       aboutGalleryItems,
@@ -300,12 +316,28 @@ export function AboutEditor() {
         description="First content card on /about after the hero. Same vision copy as Home → Academy story."
       >
         <label className="form-label">
+          <span>Mission</span>
+          <textarea className="input-field" rows={3} value={aboutMission} onChange={(e) => setAboutMission(e.target.value)} />
+        </label>
+        <label className="form-label">
           <span>Vision section title</span>
           <input className="input-field" value={aboutVisionTitle} onChange={(e) => setAboutVisionTitle(e.target.value)} />
         </label>
         <label className="form-label">
-          <span>Vision / story</span>
-          <textarea className="input-field" rows={6} value={academyInfo} onChange={(e) => setAcademyInfo(e.target.value)} />
+          <span>Vision</span>
+          <textarea className="input-field" rows={4} value={aboutVision} onChange={(e) => setAboutVision(e.target.value)} />
+        </label>
+        <label className="form-label">
+          <span>History</span>
+          <textarea className="input-field" rows={4} value={aboutHistory} onChange={(e) => setAboutHistory(e.target.value)} />
+        </label>
+        <label className="form-label">
+          <span>Management message</span>
+          <textarea className="input-field" rows={4} value={aboutManagementMessage} onChange={(e) => setAboutManagementMessage(e.target.value)} />
+        </label>
+        <label className="form-label">
+          <span>Academy summary (also used on home)</span>
+          <textarea className="input-field" rows={4} value={academyInfo} onChange={(e) => setAcademyInfo(e.target.value)} />
         </label>
         <CmsFormActions
           primaryLabel="Save vision"

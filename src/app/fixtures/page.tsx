@@ -2,7 +2,8 @@ import Link from "next/link";
 import { PublicRegistrationLink } from "@/components/public/public-registration-link";
 import { WeeklyScheduleView } from "@/components/schedule/WeeklyScheduleView";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
-import { weeklySchedule } from "@/lib/weekly-schedule/server";
+import { pageHeroFromSeo } from "@/lib/cms-seo";
+import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +15,10 @@ export const metadata: Metadata = {
 
 export default async function FixturesPage() {
   const content = await getCachedSiteContent();
+  await weeklyScheduleReady();
   const publishedWeeks = weeklySchedule.listPublishedWeekStarts();
   const defaultWeek = publishedWeeks[publishedWeeks.length - 1];
-  const heroSrc = content.scheduleHeroImage?.trim() || "/gallery/FTPR_58.JPG";
+  const heroSrc = pageHeroFromSeo(content, "schedule", content.scheduleHeroImage?.trim() || "/gallery/FTPR_58.JPG");
 
   return (
     <>

@@ -1,3 +1,4 @@
+import { isMongoConfigured } from "@/lib/db/mongo-client";
 import { isMysqlConfigured } from "@/lib/db/mysql-client";
 import { isDirectPostgresConfigured } from "@/lib/db/postgres-client";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
@@ -11,6 +12,7 @@ import { db } from "@/lib/db";
 export async function runDatabaseAudit(): Promise<AuditIssue[]> {
   const out: AuditIssue[] = [];
   const mock = process.env.USE_MOCK_DB === "true";
+  const hasMongo = isMongoConfigured();
   const hasMysql = isMysqlConfigured();
   const hasPg = isDirectPostgresConfigured();
   const hasSupa = isSupabaseConfigured();
@@ -23,6 +25,15 @@ export async function runDatabaseAudit(): Promise<AuditIssue[]> {
         description: "USE_MOCK_DB is enabled. Production data integrity and indexing cannot be verified against Postgres.",
         module: "Database",
         suggestedFix: "Run audits against a staging environment with DATABASE_URL to validate real database behavior."
+      })
+    );
+  } else if (hasMongo) {
+    out.push(
+      issue({
+        severity: "info",
+        title: "MongoDB connection configured",
+        description: "App is using MongoDB (Mongoose). Verify indexes and backups for production.",
+        module: "Database"
       })
     );
   } else if (hasMysql) {

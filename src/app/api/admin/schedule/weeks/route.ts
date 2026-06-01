@@ -3,18 +3,20 @@ import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { revalidatePublicSite } from "@/lib/revalidate-public";
 import { createWeekSchema } from "@/lib/weekly-schedule/api-schema";
-import { weeklySchedule } from "@/lib/weekly-schedule/server";
+import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
 import { jsonMessage } from "@/lib/utils";
 
 export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await weeklyScheduleReady();
   return NextResponse.json({ weeks: weeklySchedule.listWeeksAdmin() });
 }
 
 export async function POST(req: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await weeklyScheduleReady();
 
   let body: unknown;
   try {

@@ -13,7 +13,11 @@ import type {
   VerifyPaymentExtras
 } from "@/lib/types";
 import { buildDefaultSiteContent } from "./default-site-content";
-import { mergeSiteContentFromDisk, persistSiteContentSnapshot } from "@/lib/persist-site-content";
+import {
+  mergeSiteContentFromDisk,
+  mergeStoredSiteContent,
+  persistSiteContentSnapshot
+} from "@/lib/persist-site-content";
 import { withNormalizedGallery } from "@/lib/gallery-normalize";
 import { withNormalizedPitchLocations } from "@/lib/locations-normalize";
 import { normalizeNewsPosts } from "@/lib/news-posts";
@@ -940,104 +944,7 @@ export const db = {
   },
 
   getSiteContent(): SiteContent {
-    const out: SiteContent = {
-      academyInfo: siteContent.academyInfo,
-      contactBlurb: siteContent.contactBlurb,
-      homeWelcomePill: siteContent.homeWelcomePill,
-      homeHeroHeading: siteContent.homeHeroHeading,
-      homeHeroImage: siteContent.homeHeroImage,
-      homeHeroImages: { ...siteContent.homeHeroImages },
-      homeSectionImages: { ...siteContent.homeSectionImages },
-      homeHighlightItems: siteContent.homeHighlightItems.map((x) => ({ ...x })),
-      homeCounters: siteContent.homeCounters.map((x) => ({ ...x })),
-      homeCoachTitle: siteContent.homeCoachTitle,
-      homeCoachBody: siteContent.homeCoachBody,
-      homeEliteTitle: siteContent.homeEliteTitle,
-      homeEliteBody: siteContent.homeEliteBody,
-      homeMatchTitle: siteContent.homeMatchTitle,
-      homeMatchDescription: siteContent.homeMatchDescription,
-      homeTimetableTitle: siteContent.homeTimetableTitle,
-      homeTimetableDescription: siteContent.homeTimetableDescription,
-      homeDevelopmentLabel: siteContent.homeDevelopmentLabel,
-      homeDevelopmentPercent: siteContent.homeDevelopmentPercent,
-      homeParentSatisfactionLabel: siteContent.homeParentSatisfactionLabel,
-      homeParentSatisfactionPercent: siteContent.homeParentSatisfactionPercent,
-      homeTestimonial: { ...siteContent.homeTestimonial },
-      homeFaqItems: siteContent.homeFaqItems.map((x) => ({ ...x })),
-      homePathTitle: siteContent.homePathTitle,
-      homePathLead: siteContent.homePathLead,
-      homePathTeams: [...siteContent.homePathTeams],
-      homeTrainingTitle: siteContent.homeTrainingTitle,
-      homeTrainingLead: siteContent.homeTrainingLead,
-      homeJoinTitle: siteContent.homeJoinTitle,
-      homeJoinLead: siteContent.homeJoinLead,
-      homeJoinButtonLabel: siteContent.homeJoinButtonLabel,
-      schedulePagePill: siteContent.schedulePagePill,
-      scheduleHeroImage: siteContent.scheduleHeroImage,
-      schedulePageTitle: siteContent.schedulePageTitle,
-      schedulePageLead: siteContent.schedulePageLead,
-      scheduleTimelineTitle: siteContent.scheduleTimelineTitle,
-      scheduleTimelineLead: siteContent.scheduleTimelineLead,
-      scheduleLocationTitle: siteContent.scheduleLocationTitle,
-      scheduleLocationLead: siteContent.scheduleLocationLead,
-      scheduleLocationImage: siteContent.scheduleLocationImage,
-      scheduleParentBlurb: siteContent.scheduleParentBlurb,
-      aboutPagePill: siteContent.aboutPagePill,
-      aboutPageTitle: siteContent.aboutPageTitle,
-      aboutHeroImage: siteContent.aboutHeroImage,
-      aboutPageLead: siteContent.aboutPageLead,
-      aboutVisionTitle: siteContent.aboutVisionTitle,
-      aboutGalleryItems: siteContent.aboutGalleryItems.map((x) => ({ ...x })),
-      aboutValuesTitle: siteContent.aboutValuesTitle,
-      aboutPageImage: siteContent.aboutPageImage,
-      aboutSplitTitle: siteContent.aboutSplitTitle,
-      aboutSplitLead: siteContent.aboutSplitLead,
-      aboutTiles: siteContent.aboutTiles.map((x) => ({ ...x })),
-      aboutCtaTitle: siteContent.aboutCtaTitle,
-      aboutCtaLead: siteContent.aboutCtaLead,
-      programsPagePill: siteContent.programsPagePill,
-      programsHeroImage: siteContent.programsHeroImage,
-      programsPageTitle: siteContent.programsPageTitle,
-      programsPageLead: siteContent.programsPageLead,
-      programsSpotlightTitle: siteContent.programsSpotlightTitle,
-      programsSpotlightLead: siteContent.programsSpotlightLead,
-      programsSpotlightItems: siteContent.programsSpotlightItems.map((x) => ({ ...x })),
-      programsPathwayTitle: siteContent.programsPathwayTitle,
-      programsPathwayBlurb: siteContent.programsPathwayBlurb,
-      programsPathwayLineTitle: siteContent.programsPathwayLineTitle,
-      programsPathwayLineLead: siteContent.programsPathwayLineLead,
-      programsPathwayLineScrollLabel: siteContent.programsPathwayLineScrollLabel,
-      programsPathwayLineItems: siteContent.programsPathwayLineItems.map((x) => ({ ...x })),
-      programGroups: siteContent.programGroups.map((x) => ({ ...x })),
-      programsSideImage: siteContent.programsSideImage,
-      programsSplitTitle: siteContent.programsSplitTitle,
-      programsSplitLead: siteContent.programsSplitLead,
-      programsCtaTitle: siteContent.programsCtaTitle,
-      programsCtaLead: siteContent.programsCtaLead,
-      ourTeamPageTitle: siteContent.ourTeamPageTitle,
-      ourTeamPageLead: siteContent.ourTeamPageLead,
-      teamMembers: siteContent.teamMembers.map((x) => ({ ...x })),
-      newsPageTitle: siteContent.newsPageTitle,
-      newsPageLead: siteContent.newsPageLead,
-      newsPosts: siteContent.newsPosts.map((x) => ({ ...x })),
-      eventsPageTitle: siteContent.eventsPageTitle,
-      eventsPageLead: siteContent.eventsPageLead,
-      events: siteContent.events.map((x) => ({ ...x })),
-      galleryPageTitle: siteContent.galleryPageTitle,
-      galleryPageLead: siteContent.galleryPageLead,
-      galleryAlbums: siteContent.galleryAlbums.map((a) => ({
-        ...a,
-        images: a.images.map((im) => ({ ...im }))
-      })),
-      locationPageTitle: siteContent.locationPageTitle,
-      locationPageLead: siteContent.locationPageLead,
-      pitchLocations: siteContent.pitchLocations.map((p) => ({ ...p })),
-      locationMapEmbedUrl: siteContent.locationMapEmbedUrl,
-      locationAddressLine: siteContent.locationAddressLine,
-      contactPageLead: siteContent.contactPageLead,
-      contactOfficeHours: siteContent.contactOfficeHours
-    };
-    return withNormalizedPitchLocations(withNormalizedGallery(out));
+    return mergeStoredSiteContent(siteContent);
   },
 
   updateSiteContent(patch: Partial<SiteContent>) {
@@ -1054,6 +961,6 @@ export const db = {
     });
     siteContent.newsPosts = normalizeNewsPosts(siteContent.newsPosts);
     persistSiteContentNow();
-    return siteContent;
+    return mergeStoredSiteContent(siteContent);
   }
 };

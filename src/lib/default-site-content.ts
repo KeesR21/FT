@@ -1,4 +1,9 @@
 import { addDays } from "date-fns";
+import {
+  buildDefaultContactInfo,
+  buildDefaultFooterContent,
+  buildDefaultPageSeo
+} from "@/lib/cms-defaults-extras";
 import { LONG_TRIALS_ARTICLE_HTML } from "@/lib/long-sample-post-body";
 import type { SiteContent } from "@/lib/types";
 
@@ -92,6 +97,14 @@ export function buildDefaultSiteContent(): SiteContent {
   aboutPageLead:
     "We combine professional coaching, discipline, and player welfare to develop confident footballers on and off the pitch.",
   aboutVisionTitle: "Our vision",
+  aboutMission:
+    "Develop confident, disciplined footballers through professional coaching, clear pathways, and strong family partnership.",
+  aboutVision:
+    "To be Rwanda's reference academy for youth football development — on and off the pitch.",
+  aboutHistory:
+    "FTPR Lions has grown from grassroots sessions into structured age-group squads, competitive fixtures, and transparent parent communication.",
+  aboutManagementMessage:
+    "Our leadership team is committed to safeguarding, coaching quality, and sustainable growth for every player who wears the shirt.",
   aboutGalleryItems: [
     { id: "ag-1", src: "/gallery/FTPR_25.JPG", caption: "Focused training — every session counts" },
     { id: "ag-2", src: "/gallery/FTPR_38.JPG", caption: "Coaching that builds confidence" },
@@ -376,6 +389,35 @@ export function buildDefaultSiteContent(): SiteContent {
   ],
   contactPageLead:
     "Send us your enquiry about registration, programs, schedules, or academy operations.",
-  contactOfficeHours: "Office Hours: Mon–Fri, 09:00 – 17:00"
+  contactOfficeHours: "Office Hours: Mon–Fri, 09:00 – 17:00",
+  contactHeroImage: "/gallery/FTPR_25.JPG",
+  eventsHeroImage: "/gallery/FTPR_58.JPG",
+  galleryHeroImage: "/gallery/FTPR_49.JPG",
+  newsHeroImage: "/gallery/FTPR_38.JPG",
+  ourTeamHeroImage: "/gallery/FTPR_25.JPG",
+  contactInfo: buildDefaultContactInfo(),
+  footerContent: buildDefaultFooterContent(),
+  testimonials: [
+    {
+      id: "t-1",
+      type: "parent",
+      quote:
+        "Our coaches are consistent and easy to reach—my son looks forward to every session.",
+      name: "Parent, FTPR Lions family",
+      role: "U14 squad",
+      imageSrc: "/academy-2.png",
+      status: "published"
+    }
+  ],
+  sponsors: [],
+  announcements: [
+    {
+      id: "ann-1",
+      title: "Registration open",
+      body: "New player registrations are reviewed weekly. Use the contact form for enquiries.",
+      status: "published"
+    }
+  ],
+  pageSeo: buildDefaultPageSeo()
 };
 }

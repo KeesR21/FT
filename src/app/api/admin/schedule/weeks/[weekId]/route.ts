@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { revalidatePublicSite } from "@/lib/revalidate-public";
-import { weeklySchedule } from "@/lib/weekly-schedule/server";
+import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
 import { jsonMessage } from "@/lib/utils";
 
 export async function DELETE(
@@ -11,6 +11,7 @@ export async function DELETE(
 ) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await weeklyScheduleReady();
 
   const { weekId } = await params;
 

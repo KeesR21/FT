@@ -23,7 +23,7 @@ export default async function HomePage() {
       homeHighlights={c.homeHighlightItems}
       newsPreview={sortNewsPostsByPublishedDesc(c.newsPosts).slice(0, 3)}
       homeCounters={c.homeCounters}
-      todayScheduleBrief={getHomeScheduleBrief()}
+      todayScheduleBrief={await getHomeScheduleBrief()}
       homeEliteTitle={c.homeEliteTitle}
       homeEliteBody={c.homeEliteBody}
       homeMatchTitle={c.homeMatchTitle}
