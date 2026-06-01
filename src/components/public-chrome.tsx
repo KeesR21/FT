@@ -1,11 +1,17 @@
 import { SiteFooter } from "@/components/site-footer";
 import Navbar from "@/components/navbar";
+import { buildDefaultSiteContent } from "@/lib/default-site-content";
 import { getCachedSiteContent } from "@/lib/get-site-content-cached";
 import type { ReactNode } from "react";
 
 /** Public site shell: navbar + footer content loaded from the database. */
 export async function PublicChrome({ children }: { children: ReactNode }) {
-  const content = await getCachedSiteContent();
+  let content = buildDefaultSiteContent();
+  try {
+    content = await getCachedSiteContent();
+  } catch {
+    // Non-fatal — render with defaults so pages never hard-crash
+  }
 
   return (
     <>

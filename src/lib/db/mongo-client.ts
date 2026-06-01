@@ -79,6 +79,8 @@ export async function connectMongo(): Promise<typeof mongoose> {
   connectionPromise = mongoose.connect(url, {
     dbName: process.env.MONGODB_DB ?? undefined,
     bufferCommands: false,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
     maxPoolSize: Math.min(20, Math.max(1, Number(process.env.DATABASE_POOL_MAX ?? 8)))
   });
 

@@ -10,15 +10,17 @@ type SiteFooterProps = {
 
 export function SiteFooter({ footer, contact }: SiteFooterProps) {
   const year = new Date().getFullYear();
+  const quickLinks = footer?.quickLinks ?? [];
   const exploreLinks =
-    footer.quickLinks.length > 0
-      ? footer.quickLinks.map((l) => [l.href, l.label] as const)
+    quickLinks.length > 0
+      ? quickLinks.map((l) => [l.href, l.label] as const)
       : getPublicNavLinks().filter(([href]) => href !== "/");
 
-  const primaryEmail = contact.emails[0]?.address;
-  const primaryPhone = contact.phones[0]?.number;
-  const primaryOffice = contact.offices[0]?.address;
-  const hours = contact.offices[0]?.label;
+  const primaryEmail = contact?.emails?.[0]?.address;
+  const primaryPhone = contact?.phones?.[0]?.number;
+  const primaryOffice = contact?.offices?.[0]?.address;
+  const hours = contact?.offices?.[0]?.label;
+  const socialLinks = contact?.socialLinks ?? [];
 
   return (
     <footer className="site-footer">
@@ -39,11 +41,11 @@ export function SiteFooter({ footer, contact }: SiteFooterProps) {
                 <div className="brand-sub">{footer.brandSubtitle}</div>
               </div>
             </Link>
-            <p className="site-footer__tagline">{footer.tagline}</p>
-            {contact.socialLinks.length > 0 ? (
+            <p className="site-footer__tagline">{footer?.tagline}</p>
+            {socialLinks.length > 0 ? (
               <nav className="site-footer__social" aria-label="Social media">
                 <ul className="site-footer__link-list">
-                  {contact.socialLinks.map((s) => (
+                  {socialLinks.map((s) => (
                     <li key={s.id}>
                       <a href={s.url} target="_blank" rel="noopener noreferrer">
                         {s.platform}
@@ -89,10 +91,10 @@ export function SiteFooter({ footer, contact }: SiteFooterProps) {
       </div>
       <div className="site-footer__bottom">
         <div className="container site-footer__bottom-inner">
-          <span className="site-footer__copy">
-            © {year} {footer.copyrightText}
+              <span className="site-footer__copy">
+            © {year} {footer?.copyrightText}
           </span>
-          {footer.motto ? <span className="site-footer__motto">{footer.motto}</span> : null}
+          {footer?.motto ? <span className="site-footer__motto">{footer.motto}</span> : null}
         </div>
       </div>
     </footer>

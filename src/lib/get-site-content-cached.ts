@@ -1,16 +1,29 @@
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
+import { buildDefaultSiteContent } from "@/lib/default-site-content";
 import type { SiteContent } from "@/lib/types";
 
 export const SITE_CONTENT_CACHE_TAG = "site-content";
 
 const loadSiteContent = unstable_cache(
-  async (): Promise<SiteContent> => db.getSiteContent(),
+  async (): Promise<SiteContent> => {
+    try {
+      return await db.getSiteContent();
+    } catch (err) {
+      console.error("[getCachedSiteContent] DB error — using defaults:", err);
+      return buildDefaultSiteContent();
+    }
+  },
   ["site-content-root"],
   { tags: [SITE_CONTENT_CACHE_TAG], revalidate: 120 }
 );
 
 /** Public pages: avoids hitting the DB on every navigation when CMS data is stable. */
-export function getCachedSiteContent(): Promise<SiteContent> {
-  return loadSiteContent();
+export async function getCachedSiteContent(): Promise<SiteContent> {
+  try {
+    return await loadSiteContent();
+  } catch (err) {
+    console.error("[getCachedSiteContent] Cache error — using defaults:", err);
+    return buildDefaultSiteContent();
+  }
 }
