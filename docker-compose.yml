@@ -1,7 +1,33 @@
-# Local PostgreSQL for development. Start: docker compose up -d
-# Connection string for .env.local:
+# Local databases for development. Start: docker compose up -d
+#
+# MySQL (matches Hostinger):
+#   DATABASE_URL=mysql://academy:academy@127.0.0.1:3306/academy
+#   npm run db:setup:mysql
+#
+# PostgreSQL (optional):
 #   DATABASE_URL=postgresql://academy:academy@127.0.0.1:5432/academy
+#   npm run db:setup
+
 services:
+  mysql:
+    image: mysql:8.4
+    container_name: ftpr-academy-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: academy
+      MYSQL_USER: academy
+      MYSQL_PASSWORD: academy
+    ports:
+      - "3306:3306"
+    volumes:
+      - ftpr_academy_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uacademy", "-pacademy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   postgres:
     image: postgres:16-alpine
     container_name: ftpr-academy-postgres
@@ -21,4 +47,5 @@ services:
       retries: 5
 
 volumes:
+  ftpr_academy_mysql:
   ftpr_academy_pgdata:

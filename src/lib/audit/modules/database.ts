@@ -1,3 +1,4 @@
+import { isMysqlConfigured } from "@/lib/db/mysql-client";
 import { isDirectPostgresConfigured } from "@/lib/db/postgres-client";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 import { issue } from "@/lib/audit/issue-factory";
@@ -10,6 +11,7 @@ import { db } from "@/lib/db";
 export async function runDatabaseAudit(): Promise<AuditIssue[]> {
   const out: AuditIssue[] = [];
   const mock = process.env.USE_MOCK_DB === "true";
+  const hasMysql = isMysqlConfigured();
   const hasPg = isDirectPostgresConfigured();
   const hasSupa = isSupabaseConfigured();
 
@@ -21,6 +23,15 @@ export async function runDatabaseAudit(): Promise<AuditIssue[]> {
         description: "USE_MOCK_DB is enabled. Production data integrity and indexing cannot be verified against Postgres.",
         module: "Database",
         suggestedFix: "Run audits against a staging environment with DATABASE_URL to validate real database behavior."
+      })
+    );
+  } else if (hasMysql) {
+    out.push(
+      issue({
+        severity: "info",
+        title: "MySQL connection configured",
+        description: "App is using MySQL (e.g. Hostinger). Verify backups and that schema was applied (npm run db:setup:mysql).",
+        module: "Database"
       })
     );
   } else if (hasPg) {
