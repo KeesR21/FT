@@ -5,12 +5,14 @@ import { normalizeSessionInput } from "@/lib/weekly-schedule/labels";
 import { sessionBodySchema } from "@/lib/weekly-schedule/api-schema";
 import { weeklySchedule } from "@/lib/weekly-schedule/server";
 import { syncTeamCoachesFromCms } from "@/lib/weekly-schedule/sync-team-coaches";
+import { syncPitchLocationsFromCms } from "@/lib/weekly-schedule/sync-pitch-locations";
 import { jsonMessage } from "@/lib/utils";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
   await syncTeamCoachesFromCms();
+  await syncPitchLocationsFromCms();
   const { id } = await params;
 
   let body: unknown;

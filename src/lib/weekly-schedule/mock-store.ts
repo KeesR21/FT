@@ -646,6 +646,38 @@ export const weeklyScheduleMock = {
     touchPersist();
   },
 
+  /**
+   * Sync the schedule-pitch store with the pitches registered on the
+   * `/locations` page (stored as `pitchLocations` in the CMS SiteContent).
+   * Pitches removed from the locations page are marked inactive; new ones are
+   * added. Inactive pitches are kept so historical sessions still resolve names.
+   */
+  syncPitchLocations(locations: { id: string; name: string }[]): void {
+    const t = now();
+    const locationIds = new Set(locations.map((l) => l.id));
+
+    for (const l of locations) {
+      const name = l.name.trim();
+      if (!name) continue;
+      const existing = store().pitches.find((p) => p.id === l.id);
+      if (existing) {
+        existing.name = name;
+        existing.active = true;
+        existing.updatedAt = t;
+      } else {
+        store().pitches.push({ id: l.id, name, active: true, createdAt: t, updatedAt: t });
+      }
+    }
+
+    for (const pitch of store().pitches) {
+      if (!locationIds.has(pitch.id)) {
+        pitch.active = false;
+        pitch.updatedAt = t;
+      }
+    }
+    touchPersist();
+  },
+
   discardDraft(versionId: string): boolean {
     const version = getVersion(versionId);
     if (!version || version.status !== "draft") return false;

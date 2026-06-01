@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { revalidatePublicSite } from "@/lib/revalidate-public";
 import { forceSyncTeamCoachesFromCms } from "@/lib/weekly-schedule/sync-team-coaches";
+import { forceSyncPitchLocationsFromCms } from "@/lib/weekly-schedule/sync-pitch-locations";
 import { jsonMessage } from "@/lib/utils";
 
 const highlightItem = z.object({ id: z.string(), title: z.string(), body: z.string() });
@@ -313,6 +314,11 @@ export async function PATCH(req: Request) {
     // so that new/removed coaches are reflected without waiting for the cooldown.
     if (patch.teamMembers) {
       void forceSyncTeamCoachesFromCms();
+    }
+    // When pitch locations change, re-sync the schedule pitch store so the
+    // timetable selector matches the registered pitches immediately.
+    if (patch.pitchLocations) {
+      void forceSyncPitchLocationsFromCms();
     }
   }
 

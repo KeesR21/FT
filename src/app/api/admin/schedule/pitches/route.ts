@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { pitchBodySchema } from "@/lib/weekly-schedule/api-schema";
 import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
+import { syncPitchLocationsFromCms } from "@/lib/weekly-schedule/sync-pitch-locations";
 import { jsonMessage } from "@/lib/utils";
 
 export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
   await weeklyScheduleReady();
+  await syncPitchLocationsFromCms();
   return NextResponse.json({ pitches: weeklySchedule.listPitches() });
 }
 

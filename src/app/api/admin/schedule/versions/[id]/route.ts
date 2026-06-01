@@ -4,12 +4,14 @@ import { revalidateAdminViews } from "@/lib/revalidate-admin";
 import { revalidatePublicSite } from "@/lib/revalidate-public";
 import { weeklySchedule } from "@/lib/weekly-schedule/server";
 import { syncTeamCoachesFromCms } from "@/lib/weekly-schedule/sync-team-coaches";
+import { syncPitchLocationsFromCms } from "@/lib/weekly-schedule/sync-pitch-locations";
 import { jsonMessage } from "@/lib/utils";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
   await syncTeamCoachesFromCms();
+  await syncPitchLocationsFromCms();
   const { id } = await params;
   const detail = weeklySchedule.getVersionDetail(id);
   if (!detail) return NextResponse.json(jsonMessage("Version not found"), { status: 404 });
