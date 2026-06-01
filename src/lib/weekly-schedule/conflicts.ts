@@ -38,15 +38,14 @@ export function findSessionConflicts(
     const ow = window(other.startsAt, other.endsAt);
     if (!ow || !overlaps(win, ow)) continue;
 
+    // A pitch is treated as a resource that can host multiple sessions at the
+    // same time, so overlapping sessions on the same pitch are allowed. We only
+    // flag a real clash when the same squad/age group is double-booked, since a
+    // squad cannot be in two sessions simultaneously.
     if (squadsOverlap(candidate, other)) {
       out.push({
         sessionId: other.id,
         reason: "Squad overlap with another session at this time."
-      });
-    } else if (candidate.pitchId === other.pitchId) {
-      out.push({
-        sessionId: other.id,
-        reason: "Pitch conflict: same pitch booked at this time."
       });
     }
   }
