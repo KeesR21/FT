@@ -100,16 +100,19 @@ export async function connectMongo(): Promise<typeof mongoose> {
     const url = await resolveMongoUri();
     await mongoose.connect(url, {
       dbName: process.env.MONGODB_DB ?? undefined,
-      // Queue commands until connected — avoids race on Hostinger / parallel RSC.
       bufferCommands: true,
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000,
-      maxPoolSize: Math.min(20, Math.max(1, Number(process.env.DATABASE_POOL_MAX ?? 8)))
+      // Keep timeouts short so Atlas IP-whitelist blocks fail fast (< 6 s)
+      // instead of hanging Hostinger's Passenger workers into a restart loop.
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+      maxPoolSize: Math.min(10, Math.max(1, Number(process.env.DATABASE_POOL_MAX ?? 5)))
     });
     await waitForConnectionReady();
     return mongoose;
   })().catch((err) => {
     connectionPromise = null;
+    // Re-throw so callers (getSiteContent, hydrateSchedule) can catch and fall back.
     throw err;
   });
 
