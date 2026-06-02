@@ -5,6 +5,11 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "config": {
+    "mongodbMemoryServer": {
+      "disablePostinstall": "1"
+    }
+  },
   "scripts": {
     "dev": "node scripts/dev-refresh.cjs",
     "dev:turbo": "node scripts/dev-refresh.cjs --turbo",
