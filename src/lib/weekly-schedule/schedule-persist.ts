@@ -20,14 +20,19 @@ async function hydrateOnce(): Promise<void> {
     hydrated = true;
     return;
   }
-  await connectMongo();
-  const doc = await ScheduleStateModel.findById(STATE_ID).lean();
-  const payload = doc ? (doc as { payload?: unknown }).payload : null;
-  if (payload && typeof payload === "object") {
-    applyStoreSnapshot(payload as Parameters<typeof applyStoreSnapshot>[0]);
-  } else {
+  try {
+    await connectMongo();
+    const doc = await ScheduleStateModel.findById(STATE_ID).lean();
+    const payload = doc ? (doc as { payload?: unknown }).payload : null;
+    if (payload && typeof payload === "object") {
+      applyStoreSnapshot(payload as Parameters<typeof applyStoreSnapshot>[0]);
+    } else {
+      runSeedDefaults();
+      await persistScheduleStoreNow();
+    }
+  } catch (err) {
+    console.error("[schedule] hydrate failed — using in-memory defaults:", err);
     runSeedDefaults();
-    await persistScheduleStoreNow();
   }
   hydrated = true;
 }

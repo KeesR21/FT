@@ -15,7 +15,11 @@ export const metadata: Metadata = {
 
 export default async function FixturesPage() {
   const content = await getCachedSiteContent();
-  await weeklyScheduleReady();
+  try {
+    await weeklyScheduleReady();
+  } catch (err) {
+    console.error("[fixtures] schedule not ready:", err);
+  }
   const publishedWeeks = weeklySchedule.listPublishedWeekStarts();
   const defaultWeek = publishedWeeks[publishedWeeks.length - 1];
   const heroSrc = pageHeroFromSeo(content, "schedule", content.scheduleHeroImage?.trim() || "/gallery/FTPR_58.JPG");

@@ -79,11 +79,26 @@ function findPublishedScheduleForDate(dateKey: string) {
 /**
  * Brief list for the home hero card — always the academy calendar "today" (resets at 00:00 Kigali).
  */
+const EMPTY_BRIEF = (dayKey: string, dateLabel: string): HomeScheduleBrief => ({
+  heading: "Today's schedule",
+  dateLabel,
+  dayKey,
+  items: [],
+  isEmpty: true,
+  emptyMessage: "No published sessions right now. Check the full weekly timetable."
+});
+
 export async function getHomeScheduleBrief(now: Date = new Date()): Promise<HomeScheduleBrief> {
-  await weeklyScheduleReady();
   const dayKey = academyDateKey(now);
   const displayDate = parseISO(`${dayKey}T12:00:00`);
   const dateLabel = isValid(displayDate) ? format(displayDate, "EEE d MMM yyyy") : dayKey;
+
+  try {
+    await weeklyScheduleReady();
+  } catch (err) {
+    console.error("[getHomeScheduleBrief] schedule not ready:", err);
+    return EMPTY_BRIEF(dayKey, dateLabel);
+  }
 
   const schedule = findPublishedScheduleForDate(dayKey);
 

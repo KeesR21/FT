@@ -6,9 +6,16 @@ import type { ReactNode } from "react";
 
 /** Public site shell: navbar + footer content loaded from the database. */
 export async function PublicChrome({ children }: { children: ReactNode }) {
-  let content = buildDefaultSiteContent();
+  const defaults = buildDefaultSiteContent();
+  let content = defaults;
   try {
-    content = await getCachedSiteContent();
+    const loaded = await getCachedSiteContent();
+    content = {
+      ...defaults,
+      ...loaded,
+      footerContent: loaded.footerContent ?? defaults.footerContent,
+      contactInfo: loaded.contactInfo ?? defaults.contactInfo
+    };
   } catch {
     // Non-fatal — render with defaults so pages never hard-crash
   }

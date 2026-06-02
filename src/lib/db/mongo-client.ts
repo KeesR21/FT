@@ -76,13 +76,23 @@ export async function connectMongo(): Promise<typeof mongoose> {
 
   const url = await resolveMongoUri();
 
-  connectionPromise = mongoose.connect(url, {
-    dbName: process.env.MONGODB_DB ?? undefined,
-    bufferCommands: false,
-    serverSelectionTimeoutMS: 8000,
-    connectTimeoutMS: 8000,
-    maxPoolSize: Math.min(20, Math.max(1, Number(process.env.DATABASE_POOL_MAX ?? 8)))
-  });
+  connectionPromise = mongoose
+    .connect(url, {
+      dbName: process.env.MONGODB_DB ?? undefined,
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 8000,
+      maxPoolSize: Math.min(20, Math.max(1, Number(process.env.DATABASE_POOL_MAX ?? 8)))
+    })
+    .catch((err) => {
+      connectionPromise = null;
+      throw err;
+    });
 
-  return connectionPromise;
+  try {
+    return await connectionPromise;
+  } catch (err) {
+    connectionPromise = null;
+    throw err;
+  }
 }
