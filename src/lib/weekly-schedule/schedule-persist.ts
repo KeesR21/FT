@@ -1,5 +1,4 @@
-import { connectMongo } from "@/lib/db/mongo-client";
-import { isMongoConfigured } from "@/lib/db/mongo-client";
+import { connectMongo, isMongoConfigured } from "@/lib/db/mongo-client";
 import { ScheduleStateModel } from "@/lib/db/mongo-models";
 import { applyStoreSnapshot, exportStoreSnapshot, runSeedDefaults } from "@/lib/weekly-schedule/store-snapshot";
 

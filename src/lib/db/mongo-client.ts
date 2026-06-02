@@ -24,6 +24,27 @@ function devMemoryFallbackEnabled(): boolean {
   return process.env.MONGODB_DEV_MEMORY === "true" || isLocalMongoUri(mongoUrl());
 }
 
+/** Wait until Mongoose reports a live connection (needed when bufferCommands is false). */
+function waitForConnectionReady(): Promise<void> {
+  if (mongoose.connection.readyState === 1) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const onConnected = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = (err: Error) => {
+      cleanup();
+      reject(err);
+    };
+    const cleanup = () => {
+      mongoose.connection.off("connected", onConnected);
+      mongoose.connection.off("error", onError);
+    };
+    mongoose.connection.once("connected", onConnected);
+    mongoose.connection.once("error", onError);
+  });
+}
+
 /** Ping local MongoDB; if unavailable in dev, start embedded MongoDB (no Docker required). */
 async function resolveMongoUri(): Promise<string> {
   if (resolvedUri) return resolvedUri;
@@ -43,7 +64,7 @@ async function resolveMongoUri(): Promise<string> {
   try {
     await mongoose.connect(configured, {
       serverSelectionTimeoutMS: 2500,
-      bufferCommands: false
+      bufferCommands: true
     });
     await mongoose.disconnect();
     resolvedUri = configured;
@@ -67,32 +88,30 @@ async function resolveMongoUri(): Promise<string> {
 
 /**
  * Returns a shared cached Mongoose connection.
- * In Next.js each serverless/edge invocation reuses the same Node process —
- * caching the promise avoids opening a new connection on every request.
+ * Concurrent Server Components must share one in-flight connect — otherwise
+ * queries run while readyState is still "connecting" (bufferCommands: false).
  */
 export async function connectMongo(): Promise<typeof mongoose> {
-  if (mongoose.connection.readyState >= 1) return mongoose;
+  if (mongoose.connection.readyState === 1) return mongoose;
+
   if (connectionPromise) return connectionPromise;
 
-  const url = await resolveMongoUri();
-
-  connectionPromise = mongoose
-    .connect(url, {
+  connectionPromise = (async () => {
+    const url = await resolveMongoUri();
+    await mongoose.connect(url, {
       dbName: process.env.MONGODB_DB ?? undefined,
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 8000,
-      connectTimeoutMS: 8000,
+      // Queue commands until connected — avoids race on Hostinger / parallel RSC.
+      bufferCommands: true,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
       maxPoolSize: Math.min(20, Math.max(1, Number(process.env.DATABASE_POOL_MAX ?? 8)))
-    })
-    .catch((err) => {
-      connectionPromise = null;
-      throw err;
     });
-
-  try {
-    return await connectionPromise;
-  } catch (err) {
+    await waitForConnectionReady();
+    return mongoose;
+  })().catch((err) => {
     connectionPromise = null;
     throw err;
-  }
+  });
+
+  return connectionPromise;
 }
