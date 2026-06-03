@@ -64,7 +64,6 @@ function SocialLinks({ links }: { links: CmsSocialLink[] }) {
           <li key={s.id}>
             <a href={s.url} target="_blank" rel="noopener noreferrer" className="site-footer__social-link" title={s.platform} aria-label={s.platform}>
               <SocialIcon platform={s.platform} />
-              <span className="sr-only">{s.platform}</span>
             </a>
           </li>
         ))}
