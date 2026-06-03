@@ -89,7 +89,6 @@ export function SiteFooter({ footer, contact }: SiteFooterProps) {
   const primaryEmail = contact?.emails?.[0]?.address;
   const primaryPhone = contact?.phones?.[0]?.number;
   const primaryOffice = contact?.offices?.[0]?.address;
-  const hours = contact?.offices?.[0]?.label;
   const socialLinks = contact?.socialLinks ?? [];
 
   return (
@@ -143,7 +142,6 @@ export function SiteFooter({ footer, contact }: SiteFooterProps) {
                 </p>
               ) : null}
             </address>
-            {hours ? <p className="site-footer__hours muted">{hours}</p> : null}
           </div>
         </div>
       </div>

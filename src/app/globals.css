@@ -1133,27 +1133,40 @@ textarea.input-field {
 /* Social icon buttons in footer */
 .site-footer__social-list {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.55rem;
   list-style: none;
   padding: 0;
-  margin: 1rem 0 0;
+  margin: 1.1rem 0 0;
+}
+.site-footer__social-list li {
+  display: flex;
+  flex: 0 0 auto;
 }
 .site-footer__social-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.4rem;
+  height: 2.4rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.75);
-  transition: background 0.18s, color 0.18s, transform 0.18s;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
   text-decoration: none;
+  flex-shrink: 0;
+}
+.site-footer__social-link svg {
+  display: block;
+  flex-shrink: 0;
 }
 .site-footer__social-link:hover,
 .site-footer__social-link:focus-visible {
-  background: rgba(0, 170, 255, 0.22);
+  background: rgba(0, 170, 255, 0.18);
+  border-color: rgba(0, 170, 255, 0.5);
   color: #fff;
   transform: translateY(-2px);
   outline: none;
