@@ -47,6 +47,8 @@ export async function DELETE(
 ) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await syncTeamCoachesFromCms();
+  await syncPitchLocationsFromCms();
   const { id, sessionId } = await params;
 
   try {

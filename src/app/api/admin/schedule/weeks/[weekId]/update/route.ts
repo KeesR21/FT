@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { revalidateAdminViews } from "@/lib/revalidate-admin";
-import { weeklySchedule } from "@/lib/weekly-schedule/server";
+import { weeklySchedule, weeklyScheduleReady } from "@/lib/weekly-schedule/server";
 import { jsonMessage } from "@/lib/utils";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ weekId: string }> }) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await weeklyScheduleReady();
   const { weekId } = await params;
 
   try {

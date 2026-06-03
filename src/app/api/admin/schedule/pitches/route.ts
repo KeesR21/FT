@@ -10,7 +10,7 @@ export async function GET() {
   if (unauthorized) return unauthorized;
   await weeklyScheduleReady();
   await syncPitchLocationsFromCms();
-  return NextResponse.json({ pitches: weeklySchedule.listPitches() });
+  return NextResponse.json({ pitches: weeklySchedule.listPitches().filter((p) => p.active) });
 }
 
 export async function POST(req: Request) {

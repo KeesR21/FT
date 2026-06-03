@@ -21,6 +21,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await syncTeamCoachesFromCms();
+  await syncPitchLocationsFromCms();
   const { id } = await params;
   try {
     const ok = weeklySchedule.discardDraft(id);

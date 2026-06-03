@@ -17,6 +17,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  await syncTeamCoachesFromCms();
   const body = await req.json();
   const parsed = coachBodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json(jsonMessage("Invalid coach"), { status: 400 });
