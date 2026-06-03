@@ -105,9 +105,10 @@ export function SiteEditor() {
       </CmsSection>
 
       <CmsSection title="Contact information" description="Phone, email, offices, and social links.">
+        <p className="cms-field-group-label">Phone numbers</p>
         {contactInfo.phones.map((p, i) => (
           <div key={p.id} className="cms-inline-row">
-            <input className="input-field" placeholder="Label" value={p.label} onChange={(e) => {
+            <input className="input-field" placeholder="Label e.g. Main office" value={p.label} onChange={(e) => {
               const phones = [...contactInfo.phones];
               phones[i] = { ...p, label: e.target.value };
               setContactInfo({ ...contactInfo, phones });
@@ -117,17 +118,49 @@ export function SiteEditor() {
               phones[i] = { ...p, number: e.target.value };
               setContactInfo({ ...contactInfo, phones });
             }} />
+            <button type="button" className="btn btn--ghost btn--icon" title="Remove" onClick={() => setContactInfo({ ...contactInfo, phones: contactInfo.phones.filter((_, j) => j !== i) })}>✕</button>
           </div>
         ))}
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setContactInfo({ ...contactInfo, phones: [...contactInfo.phones, { id: newId(), label: "", number: "" }] })}>+ Add phone</button>
+
+        <p className="cms-field-group-label" style={{ marginTop: "1rem" }}>Email addresses</p>
         {contactInfo.emails.map((em, i) => (
           <div key={em.id} className="cms-inline-row">
-            <input className="input-field" value={em.address} onChange={(e) => {
+            <input className="input-field" placeholder="Label e.g. General enquiries" value={em.label} onChange={(e) => {
+              const emails = [...contactInfo.emails];
+              emails[i] = { ...em, label: e.target.value };
+              setContactInfo({ ...contactInfo, emails });
+            }} />
+            <input className="input-field" placeholder="Email address" value={em.address} onChange={(e) => {
               const emails = [...contactInfo.emails];
               emails[i] = { ...em, address: e.target.value };
               setContactInfo({ ...contactInfo, emails });
             }} />
+            <button type="button" className="btn btn--ghost btn--icon" title="Remove" onClick={() => setContactInfo({ ...contactInfo, emails: contactInfo.emails.filter((_, j) => j !== i) })}>✕</button>
           </div>
         ))}
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setContactInfo({ ...contactInfo, emails: [...contactInfo.emails, { id: newId(), label: "", address: "" }] })}>+ Add email</button>
+
+        <p className="cms-field-group-label" style={{ marginTop: "1rem" }}>Social media profiles</p>
+        <p className="muted" style={{ fontSize: "0.82rem", marginBottom: "0.5rem" }}>
+          These links appear in the footer. Platform name controls the icon shown (e.g. <em>Facebook</em>, <em>Instagram</em>, <em>YouTube</em>, <em>TikTok</em>, <em>WhatsApp</em>).
+        </p>
+        {(contactInfo.socialLinks ?? []).map((s, i) => (
+          <div key={s.id} className="cms-inline-row">
+            <input className="input-field" placeholder="Platform (e.g. Facebook)" value={s.platform} onChange={(e) => {
+              const socialLinks = [...(contactInfo.socialLinks ?? [])];
+              socialLinks[i] = { ...s, platform: e.target.value };
+              setContactInfo({ ...contactInfo, socialLinks });
+            }} />
+            <input className="input-field" placeholder="Full URL (https://...)" value={s.url} onChange={(e) => {
+              const socialLinks = [...(contactInfo.socialLinks ?? [])];
+              socialLinks[i] = { ...s, url: e.target.value };
+              setContactInfo({ ...contactInfo, socialLinks });
+            }} />
+            <button type="button" className="btn btn--ghost btn--icon" title="Remove" onClick={() => setContactInfo({ ...contactInfo, socialLinks: (contactInfo.socialLinks ?? []).filter((_, j) => j !== i) })}>✕</button>
+          </div>
+        ))}
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setContactInfo({ ...contactInfo, socialLinks: [...(contactInfo.socialLinks ?? []), { id: newId(), platform: "Facebook", url: "" }] })}>+ Add social link</button>
       </CmsSection>
 
       <CmsSection title="Testimonials" description="Parent, player, and partner quotes.">

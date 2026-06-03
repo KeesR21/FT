@@ -1130,6 +1130,35 @@ textarea.input-field {
   color: rgba(0, 170, 255, 0.55);
 }
 
+/* Social icon buttons in footer */
+.site-footer__social-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+.site-footer__social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.75);
+  transition: background 0.18s, color 0.18s, transform 0.18s;
+  text-decoration: none;
+}
+.site-footer__social-link:hover,
+.site-footer__social-link:focus-visible {
+  background: rgba(0, 170, 255, 0.22);
+  color: #fff;
+  transform: translateY(-2px);
+  outline: none;
+}
+
 @media (max-width: 900px) {
   .site-footer__grid {
     grid-template-columns: 1fr;
@@ -4840,6 +4869,41 @@ select.input-field option {
   margin: 0;
   font-size: 0.9rem;
   color: var(--admin-text-muted, #64748b);
+}
+
+/* Sub-group label inside a CmsSection */
+.cms-field-group-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, rgba(255,255,255,0.45));
+  margin: 0 0 0.35rem;
+}
+
+/* Inline row used in site-editor for phones / emails / social links */
+.cms-inline-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+.cms-inline-row .input-field {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+/* Small / icon variants for btn */
+.btn--sm {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.75rem;
+}
+.btn--icon {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .cms-editor-load-fail {

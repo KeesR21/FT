@@ -91,6 +91,64 @@ const pitchLocation = z.object({
 const aboutTile = z.object({ id: z.string(), title: z.string(), body: z.string() });
 const aboutGalleryItem = z.object({ id: z.string(), src: z.string(), caption: z.string() });
 
+// Site-settings objects (contactInfo, footerContent, testimonials, etc.)
+const socialLink = z.object({ id: z.string(), platform: z.string(), url: z.string() });
+const contactPhone = z.object({ id: z.string(), label: z.string(), number: z.string() });
+const contactEmail = z.object({ id: z.string(), label: z.string(), address: z.string() });
+const contactOffice = z.object({ id: z.string(), label: z.string(), address: z.string() });
+const contactInfoSchema = z.object({
+  phones: z.array(contactPhone),
+  emails: z.array(contactEmail),
+  offices: z.array(contactOffice),
+  socialLinks: z.array(socialLink)
+});
+const footerLink = z.object({ id: z.string(), label: z.string(), href: z.string() });
+const footerContentSchema = z.object({
+  brandTitle: z.string(),
+  brandSubtitle: z.string(),
+  logoSrc: z.string(),
+  tagline: z.string(),
+  quickLinks: z.array(footerLink),
+  copyrightText: z.string(),
+  motto: z.string()
+});
+const testimonialSchema = z.object({
+  id: z.string(),
+  type: z.enum(["parent", "player", "partner"]),
+  quote: z.string(),
+  name: z.string(),
+  role: z.string(),
+  imageSrc: z.string().optional(),
+  status: z.enum(["draft", "published"]).optional(),
+  deletedAt: z.string().nullable().optional()
+});
+const sponsorSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  logoSrc: z.string(),
+  websiteUrl: z.string(),
+  status: z.enum(["draft", "published"]).optional(),
+  deletedAt: z.string().nullable().optional()
+});
+const announcementSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  body: z.string(),
+  expiresAt: z.string().optional(),
+  status: z.enum(["draft", "published"]).optional(),
+  deletedAt: z.string().nullable().optional()
+});
+const pageSeoSchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  metaDescription: z.string(),
+  ogImage: z.string().optional(),
+  keywords: z.string().optional(),
+  heroImage: z.string().optional(),
+  status: z.enum(["draft", "published"]).optional()
+});
+
 const patchSchema = z.object({
   academyInfo: z.string().optional(),
   contactBlurb: z.string().optional(),
@@ -188,6 +246,12 @@ const patchSchema = z.object({
   locationAddressLine: z.string().optional(),
   contactPageLead: z.string().optional(),
   contactOfficeHours: z.string().optional(),
+  contactInfo: contactInfoSchema.optional(),
+  footerContent: footerContentSchema.optional(),
+  testimonials: z.array(testimonialSchema).optional(),
+  sponsors: z.array(sponsorSchema).optional(),
+  announcements: z.array(announcementSchema).optional(),
+  pageSeo: z.array(pageSeoSchema).optional(),
 });
 
 export async function GET() {
@@ -308,7 +372,13 @@ export async function PATCH(req: Request) {
     "locationMapEmbedUrl",
     "locationAddressLine",
     "contactPageLead",
-    "contactOfficeHours"
+    "contactOfficeHours",
+    "contactInfo",
+    "footerContent",
+    "testimonials",
+    "sponsors",
+    "announcements",
+    "pageSeo"
   ] as const;
 
   const patch: Partial<SiteContent> = {};
