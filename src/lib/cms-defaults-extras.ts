@@ -4,7 +4,7 @@ export function buildDefaultContactInfo(): CmsContactInfo {
   return {
     phones: [{ id: "ph-1", label: "Main office", number: "+250 788 614 755" }],
     emails: [{ id: "em-1", label: "General enquiries", address: "info@ftprlionsacademy.com" }],
-    offices: [{ id: "of-1", label: "Head office", address: "Kigali, Rwanda" }],
+    offices: [{ id: "of-1", label: "Academy Location", address: "Kigali, Rwanda" }],
     socialLinks: [
       { id: "soc-1", platform: "Facebook", url: "https://facebook.com" },
       { id: "soc-2", platform: "Instagram", url: "https://instagram.com" }
