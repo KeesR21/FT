@@ -85,6 +85,8 @@ export function WeeklySessionModal({ session, onClose }: Props) {
   const end = parseISO(session.endsAt);
   const timeLabel =
     isValid(start) && isValid(end) ? `${format(start, "h:mm a")} – ${format(end, "h:mm a")}` : "—";
+  const dateLabel = isValid(start) ? format(start, "EEEE, dd MMMM yyyy") : "";
+  const completed = session.completed;
 
   const isMatch = session.type === "match";
   const isRest = session.type === "rest";
@@ -112,6 +114,9 @@ export function WeeklySessionModal({ session, onClose }: Props) {
             >
               {isMatch ? "⚽ Match Day" : session.typeLabel}
             </span>
+            {completed ? (
+              <span className="ws-session-popup__badge ws-session-popup__badge--completed">✓ Completed</span>
+            ) : null}
 
             {isMatch ? (
               <h2 id="ws-session-title" className="ws-session-popup__match-title">
@@ -126,6 +131,7 @@ export function WeeklySessionModal({ session, onClose }: Props) {
             )}
 
             <p className="ws-session-popup__meta">
+              {dateLabel ? <span className="ws-session-popup__date">{dateLabel}</span> : null}
               <span className="ws-session-popup__time">{timeLabel}</span>
             </p>
 

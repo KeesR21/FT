@@ -80,6 +80,8 @@ export type PublicScheduleSession = ScheduleSession & {
   pitchName: string;
   periodLabel: string;
   typeLabel: string;
+  /** True when the session's end time is already in the past. Computed at read time; never stored. */
+  completed: boolean;
 };
 
 export type AdminWeekSummary = {

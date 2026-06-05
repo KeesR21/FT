@@ -9,6 +9,7 @@ export type HomeScheduleBriefItem = {
   timeLabel: string;
   title: string;
   meta: string;
+  completed: boolean;
 };
 
 export type HomeScheduleBrief = {
@@ -91,7 +92,7 @@ const EMPTY_BRIEF = (dayKey: string, dateLabel: string): HomeScheduleBrief => ({
 export async function getHomeScheduleBrief(now: Date = new Date()): Promise<HomeScheduleBrief> {
   const dayKey = academyDateKey(now);
   const displayDate = parseISO(`${dayKey}T12:00:00`);
-  const dateLabel = isValid(displayDate) ? format(displayDate, "EEE d MMM yyyy") : dayKey;
+  const dateLabel = isValid(displayDate) ? format(displayDate, "EEEE, dd MMMM yyyy") : dayKey;
 
   try {
     await weeklyScheduleReady();
@@ -131,7 +132,8 @@ export async function getHomeScheduleBrief(now: Date = new Date()): Promise<Home
     return {
       timeLabel: formatTimeRange(session.startsAt, session.endsAt),
       title,
-      meta
+      meta,
+      completed: session.completed
     };
   });
 

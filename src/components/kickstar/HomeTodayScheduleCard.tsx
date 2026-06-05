@@ -17,8 +17,16 @@ export function HomeTodayScheduleCard({ brief }: Props) {
       ) : (
         <ul className="ks-home-schedule-card__list">
           {brief.items.map((item, index) => (
-            <li key={`${item.timeLabel}-${item.title}-${index}`} className="ks-home-schedule-card__item">
-              <span className="ks-home-schedule-card__time">{item.timeLabel}</span>
+            <li
+              key={`${item.timeLabel}-${item.title}-${index}`}
+              className={`ks-home-schedule-card__item${item.completed ? " ks-home-schedule-card__item--completed" : ""}`}
+            >
+              <span className="ks-home-schedule-card__time">
+                {item.timeLabel}
+                {item.completed ? (
+                  <span className="ks-home-schedule-card__completed">✓ Completed</span>
+                ) : null}
+              </span>
               <span className="ks-home-schedule-card__title">{item.title}</span>
               {item.meta ? <span className="ks-home-schedule-card__meta muted">{item.meta}</span> : null}
             </li>

@@ -12,21 +12,27 @@ type Props = {
   onSelect: (session: PublicScheduleSession) => void;
 };
 
+function CompletedBadge() {
+  return <span className="ws-session-card__badge ws-session-card__badge--completed">✓ Completed</span>;
+}
+
 export function ScheduleSessionCard({ session, onSelect }: Props) {
   const start = parseISO(session.startsAt);
   const end = parseISO(session.endsAt);
   const timeLabel =
     isValid(start) && isValid(end) ? `${format(start, "h:mm a")} – ${format(end, "h:mm a")}` : "—";
+  const completed = session.completed;
 
   if (session.type === "match") {
     return (
       <li className="ws-day-section__list-item">
         <button
           type="button"
-          className="ws-session-card ws-session-card--match"
+          className={`ws-session-card ws-session-card--match${completed ? " ws-session-card--completed" : ""}`}
           onClick={() => onSelect(session)}
         >
           <span className="ws-session-card__badge ws-session-card__badge--match">⚽ Match Day</span>
+          {completed && <CompletedBadge />}
           <p className="ws-session-card__match-teams">
             <span>{session.teamA}</span>
             <span className="ws-session-card__vs">VS</span>
@@ -50,10 +56,11 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
       <li className="ws-day-section__list-item">
         <button
           type="button"
-          className="ws-session-card ws-session-card--training"
+          className={`ws-session-card ws-session-card--training${completed ? " ws-session-card--completed" : ""}`}
           onClick={() => onSelect(session)}
         >
           <span className="ws-session-card__badge ws-session-card__badge--training">Rest</span>
+          {completed && <CompletedBadge />}
           <p className="ws-session-card__time">{timeLabel}</p>
           <p className="ws-session-card__groups">{sessionGroupsDisplayLine(session.ageGroups) || "All squads"}</p>
           <p className="ws-session-card__detail muted">{session.trainingTopic || "Recovery / rest"}</p>
@@ -71,7 +78,7 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
     <li className="ws-day-section__list-item">
       <button
         type="button"
-        className="ws-session-card ws-session-card--training"
+        className={`ws-session-card ws-session-card--training${completed ? " ws-session-card--completed" : ""}`}
         style={
           {
             "--ws-accent-border": c.border,
@@ -82,6 +89,7 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
         onClick={() => onSelect(session)}
       >
         <span className="ws-session-card__badge ws-session-card__badge--training">Training</span>
+        {completed && <CompletedBadge />}
         <p className="ws-session-card__time">{timeLabel}</p>
         <p className="ws-session-card__groups">{sessionGroupsDisplayLine(session.ageGroups)}</p>
         <p className="ws-session-card__detail muted">{session.periodLabel}</p>

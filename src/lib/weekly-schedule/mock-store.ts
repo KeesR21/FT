@@ -241,7 +241,8 @@ function enrichSession(
     coachNames,
     pitchName,
     periodLabel: periodLabel(normalized.period),
-    typeLabel: sessionTypeLabel(normalized.type)
+    typeLabel: sessionTypeLabel(normalized.type),
+    completed: new Date(normalized.endsAt).getTime() < Date.now()
   };
 }
 
@@ -419,21 +420,11 @@ export const weeklyScheduleMock = {
 
     const coaches = this.listCoaches().filter((c) => c.active);
     const pitches = this.listPitches().filter((p) => p.active);
-    const allSessions = sessionsForVersion(version.id).map((s) => enrichSession(s, coaches, pitches));
-
-    // For the current ongoing week, strip sessions that have already ended so
-    // the public page only shows remaining / upcoming sessions.
-    const nowMs = Date.now();
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const weekEndStr = (() => {
-      const d = new Date(week.weekStart);
-      d.setDate(d.getDate() + 6);
-      return d.toISOString().slice(0, 10);
-    })();
-    const isCurrentWeek = week.weekStart <= todayStr && weekEndStr >= todayStr;
-    const sessions = isCurrentWeek
-      ? allSessions.filter((s) => new Date(s.endsAt).getTime() > nowMs)
-      : allSessions;
+    // Past sessions remain visible for the whole week. Sessions that have
+    // already ended are flagged `completed` by enrichSession() and labelled in
+    // the UI instead of being hidden. When a new week begins, week selection
+    // moves on to that week, so the previous week's sessions drop off naturally.
+    const sessions = sessionsForVersion(version.id).map((s) => enrichSession(s, coaches, pitches));
 
     const updatedOnLabel = formatUpdatedOn(version.updatedAt);
 

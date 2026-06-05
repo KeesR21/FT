@@ -124,7 +124,7 @@ export function WeeklyScheduleView({ initialWeekStart }: Props) {
           {DAY_ORDER.map((dayName, i) => {
             const dayDate = addDays(parseISO(`${schedule.week.weekStart}T12:00:00`), i);
             const sessions = sessionsByDay.get(dayName) ?? [];
-            const dateLabel = isValid(dayDate) ? format(dayDate, "d MMMM") : "";
+            const dateLabel = isValid(dayDate) ? format(dayDate, "dd MMMM yyyy") : "";
 
             return (
               <section key={dayName} className="ws-day-section" aria-label={`${dayName} schedule`}>
