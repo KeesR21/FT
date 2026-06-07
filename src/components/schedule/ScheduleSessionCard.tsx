@@ -21,6 +21,7 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
   const end = parseISO(session.endsAt);
   const timeLabel =
     isValid(start) && isValid(end) ? `${format(start, "h:mm a")} – ${format(end, "h:mm a")}` : "—";
+  const dateLabel = isValid(start) ? format(start, "EEEE, dd MMMM yyyy") : "";
   const completed = session.completed;
 
   if (session.type === "match") {
@@ -38,6 +39,7 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
             <span className="ws-session-card__vs">VS</span>
             <span>{session.teamB}</span>
           </p>
+          {dateLabel && <p className="ws-session-card__date">{dateLabel}</p>}
           <p className="ws-session-card__time">{timeLabel}</p>
           <p className="ws-session-card__detail">{session.pitchName}</p>
           {session.coachNames.length > 0 && (
@@ -61,6 +63,7 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
         >
           <span className="ws-session-card__badge ws-session-card__badge--training">Rest</span>
           {completed && <CompletedBadge />}
+          {dateLabel && <p className="ws-session-card__date">{dateLabel}</p>}
           <p className="ws-session-card__time">{timeLabel}</p>
           <p className="ws-session-card__groups">{sessionGroupsDisplayLine(session.ageGroups) || "All squads"}</p>
           <p className="ws-session-card__detail muted">{session.trainingTopic || "Recovery / rest"}</p>
@@ -90,6 +93,7 @@ export function ScheduleSessionCard({ session, onSelect }: Props) {
       >
         <span className="ws-session-card__badge ws-session-card__badge--training">Training</span>
         {completed && <CompletedBadge />}
+        {dateLabel && <p className="ws-session-card__date">{dateLabel}</p>}
         <p className="ws-session-card__time">{timeLabel}</p>
         <p className="ws-session-card__groups">{sessionGroupsDisplayLine(session.ageGroups)}</p>
         <p className="ws-session-card__detail muted">{session.periodLabel}</p>

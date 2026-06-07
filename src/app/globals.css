@@ -12304,6 +12304,14 @@ textarea.contact-form__control {
   border: 1px solid rgba(148, 163, 184, 0.4);
 }
 
+.ws-session-card__date {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0.85;
+}
+
 .ws-session-card__time {
   margin: 0;
   font-size: 1.05rem;
